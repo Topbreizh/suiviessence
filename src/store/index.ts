@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { FuelPurchase, Vehicle, PaymentMethod, FuelType } from '@/types';
@@ -29,12 +30,15 @@ export const useStore = create<StoreState>()(
           const purchases: FuelPurchase[] = [];
           
           querySnapshot.forEach((doc) => {
-            const data = doc.data() as Omit<FuelPurchase, 'id' | 'date'>;
+            const data = doc.data();
+            // Convert Firestore timestamp to JavaScript Date
+            const purchaseDate = data.date ? new Date(data.date.seconds * 1000) : new Date();
+            
             purchases.push({
               ...data,
               id: doc.id,
-              date: new Date(data.date.seconds * 1000),
-            });
+              date: purchaseDate,
+            } as FuelPurchase);
           });
           
           set({ fuelPurchases: purchases });
