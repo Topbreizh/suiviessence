@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '@/store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,14 +21,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 
 const Vehicles = () => {
-  const { vehicles, deleteVehicle, fuelPurchases } = useStore();
+  const { vehicles, deleteVehicle, fuelPurchases, fetchVehicles } = useStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedVehicle, setSelectedVehicle] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    fetchVehicles();
+  }, [fetchVehicles]);
 
   const filteredVehicles = vehicles.filter(vehicle => {
     const query = searchQuery.toLowerCase();
@@ -62,7 +66,7 @@ const Vehicles = () => {
     return fuelPurchases.filter(purchase => purchase.vehicleId === vehicleId).length;
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (selectedVehicle) {
       // Check if vehicle has associated purchases
       const purchaseCount = getPurchaseCount(selectedVehicle);
@@ -76,12 +80,24 @@ const Vehicles = () => {
         return;
       }
 
-      deleteVehicle(selectedVehicle);
-      toast({
-        title: "Véhicule supprimé",
-        description: "Le véhicule a été supprimé avec succès",
-      });
-      setSelectedVehicle(null);
+      setIsDeleting(true);
+      try {
+        await deleteVehicle(selectedVehicle);
+        toast({
+          title: "Véhicule supprimé",
+          description: "Le véhicule a été supprimé avec succès",
+        });
+      } catch (error) {
+        console.error('Error deleting vehicle:', error);
+        toast({
+          title: "Erreur",
+          description: "Une erreur est survenue lors de la suppression du véhicule",
+          variant: "destructive",
+        });
+      } finally {
+        setIsDeleting(false);
+        setSelectedVehicle(null);
+      }
     }
   };
 

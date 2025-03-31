@@ -13,9 +13,10 @@ interface StoreState {
   updateFuelPurchase: (id: string, purchase: Partial<FuelPurchase>) => Promise<void>;
   deleteFuelPurchase: (id: string) => Promise<void>;
   fetchFuelPurchases: () => Promise<void>;
-  addVehicle: (vehicle: Omit<Vehicle, 'id'>) => string;
-  updateVehicle: (id: string, vehicle: Partial<Vehicle>) => void;
-  deleteVehicle: (id: string) => void;
+  addVehicle: (vehicle: Omit<Vehicle, 'id'>) => Promise<string>;
+  updateVehicle: (id: string, vehicle: Partial<Vehicle>) => Promise<void>;
+  deleteVehicle: (id: string) => Promise<void>;
+  fetchVehicles: () => Promise<void>;
 }
 
 export const useStore = create<StoreState>()(
@@ -98,26 +99,77 @@ export const useStore = create<StoreState>()(
         }
       },
       
-      addVehicle: (vehicle) => {
-        const id = uuidv4();
-        set((state) => ({
-          vehicles: [...state.vehicles, { ...vehicle, id }],
-        }));
-        return id;
+      // Fetch vehicles from Firestore
+      fetchVehicles: async () => {
+        try {
+          const querySnapshot = await getDocs(collection(db, 'vehicles'));
+          const vehicles: Vehicle[] = [];
+          
+          querySnapshot.forEach((doc) => {
+            vehicles.push({
+              ...doc.data(),
+              id: doc.id,
+            } as Vehicle);
+          });
+          
+          set({ vehicles });
+        } catch (error) {
+          console.error('Error fetching vehicles:', error);
+        }
       },
       
-      updateVehicle: (id, vehicle) => {
-        set((state) => ({
-          vehicles: state.vehicles.map((v) =>
-            v.id === id ? { ...v, ...vehicle } : v
-          ),
-        }));
+      // Add a vehicle to Firestore
+      addVehicle: async (vehicle) => {
+        try {
+          // Add to Firestore
+          const docRef = await addDoc(collection(db, 'vehicles'), vehicle);
+          
+          // Update local state
+          const id = docRef.id;
+          set((state) => ({
+            vehicles: [...state.vehicles, { ...vehicle, id }],
+          }));
+          
+          return id;
+        } catch (error) {
+          console.error('Error adding vehicle:', error);
+          throw error;
+        }
       },
       
-      deleteVehicle: (id) => {
-        set((state) => ({
-          vehicles: state.vehicles.filter((v) => v.id !== id),
-        }));
+      // Update a vehicle in Firestore
+      updateVehicle: async (id, vehicle) => {
+        try {
+          // Update in Firestore
+          const vehicleRef = doc(db, 'vehicles', id);
+          await updateDoc(vehicleRef, vehicle);
+          
+          // Update local state
+          set((state) => ({
+            vehicles: state.vehicles.map((v) =>
+              v.id === id ? { ...v, ...vehicle } : v
+            ),
+          }));
+        } catch (error) {
+          console.error('Error updating vehicle:', error);
+          throw error;
+        }
+      },
+      
+      // Delete a vehicle from Firestore
+      deleteVehicle: async (id) => {
+        try {
+          // Delete from Firestore
+          await deleteDoc(doc(db, 'vehicles', id));
+          
+          // Update local state
+          set((state) => ({
+            vehicles: state.vehicles.filter((v) => v.id !== id),
+          }));
+        } catch (error) {
+          console.error('Error deleting vehicle:', error);
+          throw error;
+        }
       },
     }),
     {
