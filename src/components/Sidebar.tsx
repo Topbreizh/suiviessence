@@ -21,7 +21,7 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
           <Link to="/" className="flex items-center gap-2">
             <Fuel className="h-6 w-6 text-primary" />
             <span className="font-bold text-xl">
-              <span className="text-primary">Gestion</span> essence
+              <span className="text-primary">Gasoline</span> Guru
             </span>
           </Link>
         </div>
@@ -75,7 +75,7 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
             <Link to="/" className="flex items-center gap-2">
               <Fuel className="h-6 w-6 text-primary" />
               <span className="font-bold text-xl">
-                <span className="text-primary">Gestion</span> essence
+                <span className="text-primary">Gasoline</span> Guru
               </span>
             </Link>
           </div>

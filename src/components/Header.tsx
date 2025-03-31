@@ -24,7 +24,7 @@ const Header = ({ sidebarOpen, setSidebarOpen }: HeaderProps) => {
           <span className="sr-only">Toggle Menu</span>
         </Button>
         <h1 className="text-xl font-bold ml-2 md:ml-0">
-          <span className="text-primary">Gestion</span> essence
+          <span className="text-primary">Gasoline</span> Guru
         </h1>
       </div>
       <div className="flex items-center gap-2">

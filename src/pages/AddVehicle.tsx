@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import { 
   Select, 
   SelectContent, 
@@ -37,7 +37,7 @@ const AddVehicle = () => {
   const currentYear = new Date().getFullYear();
   const yearOptions = Array.from({ length: 30 }, (_, i) => currentYear - i);
   
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!name.trim()) {
@@ -92,7 +92,7 @@ const AddVehicle = () => {
     setIsSubmitting(true);
     
     try {
-      await addVehicle({
+      addVehicle({
         name: name.trim(),
         make: make.trim(),
         model: model.trim(),
@@ -111,7 +111,6 @@ const AddVehicle = () => {
       
       navigate('/vehicles');
     } catch (error) {
-      console.error('Error adding vehicle:', error);
       toast({
         title: "Erreur",
         description: "Une erreur est survenue lors de l'ajout du véhicule",
