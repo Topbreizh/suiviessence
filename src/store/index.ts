@@ -117,7 +117,7 @@ export const useStore = create<StoreState>()(
           const purchaseRef = doc(db, "fuelPurchases", id);
           
           // If updating the date, convert it to Firestore Timestamp
-          const updateData = {...purchase};
+          const updateData: any = {...purchase};
           if (purchase.date) {
             updateData.date = Timestamp.fromDate(new Date(purchase.date));
           }
