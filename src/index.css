@@ -92,6 +92,16 @@
 
   body {
     @apply bg-background text-foreground;
+    background-image: url('/lovable-uploads/c1a3dea8-336b-458c-b3bd-8ecd189069e1.png');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+  }
+
+  #root {
+    background-color: rgba(255, 255, 255, 0.85);
+    min-height: 100vh;
   }
 }
 

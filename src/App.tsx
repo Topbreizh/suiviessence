@@ -12,7 +12,10 @@ import Vehicles from "@/pages/Vehicles";
 import Statistics from "@/pages/Statistics";
 import AddPurchase from "@/pages/AddPurchase";
 import AddVehicle from "@/pages/AddVehicle";
+import EditVehicle from "@/pages/EditVehicle";
+import EditPurchase from "@/pages/EditPurchase";
 import NotFound from "@/pages/NotFound";
+import "./index.css";
 
 const queryClient = new QueryClient();
 
@@ -28,8 +31,10 @@ const App = () => (
               <Route index element={<Dashboard />} />
               <Route path="purchases" element={<Purchases />} />
               <Route path="purchases/add" element={<AddPurchase />} />
+              <Route path="purchases/edit/:id" element={<EditPurchase />} />
               <Route path="vehicles" element={<Vehicles />} />
               <Route path="vehicles/add" element={<AddVehicle />} />
+              <Route path="vehicles/edit/:id" element={<EditVehicle />} />
               <Route path="statistics" element={<Statistics />} />
               <Route path="*" element={<NotFound />} />
             </Route>
