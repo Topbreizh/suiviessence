@@ -92,7 +92,7 @@
 
   body {
     @apply bg-background text-foreground;
-    background-image: url('/lovable-uploads/c1a3dea8-336b-458c-b3bd-8ecd189069e1.png');
+    background-image: url('/lovable-uploads/0a6b3aba-6a87-4d6b-b5af-d6cbbec4fb4e.png');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
@@ -100,7 +100,7 @@
   }
 
   #root {
-    background-color: rgba(255, 255, 255, 0.85);
+    background-color: rgba(255, 255, 255, 0.75); /* Transparence réduite pour mieux voir l'arrière-plan */
     min-height: 100vh;
   }
 }
@@ -120,5 +120,11 @@
   
   .glass-card {
     @apply bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl;
+  }
+  
+  /* Ajout d'une nouvelle classe pour un effet plus transparent */
+  .transparent-bg {
+    background-color: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(8px);
   }
 }

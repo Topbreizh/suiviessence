@@ -1,461 +1,338 @@
 
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useStore } from '@/store';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
-import { Calendar as CalendarIcon, Loader2, ArrowLeft } from 'lucide-react';
-import { CalendarProps } from 'react-day-picker';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { toast } from '@/hooks/use-toast';
-import type { FuelPurchase } from '@/types';
-
-const formSchema = z.object({
-  vehicleId: z.string().min(1, "Veuillez sélectionner un véhicule"),
-  date: z.date(),
-  quantity: z.coerce.number().positive("La quantité doit être positive"),
-  pricePerLiter: z.coerce.number().positive("Le prix doit être positif"),
-  totalPrice: z.coerce.number().positive("Le prix total doit être positif"),
-  stationName: z.string().min(1, "Le nom de la station est requis"),
-  location: z.object({
-    lat: z.number().optional(),
-    lng: z.number().optional(),
-    address: z.string().optional(),
-  }),
-  paymentMethod: z.enum(["card", "cash", "app", "other"]),
-  mileage: z.coerce.number().nonnegative("Le kilométrage doit être positif ou zéro"),
-  notes: z.string().optional(),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+import React, { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useStore } from "@/store";
+import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import { Calendar } from "@/components/ui/calendar";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowLeft, CalendarIcon, Save } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { FuelPurchase } from "@/types";
+import { cn } from "@/lib/utils";
 
 const EditPurchase = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { vehicles, fuelPurchases, updateFuelPurchase, fetchVehicles, fetchFuelPurchases, isLoading } = useStore();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isPriceCalculationLocked, setIsPriceCalculationLocked] = useState(true);
-
-  // Fetch vehicles and purchases if not already loaded
+  const { toast } = useToast();
+  const { fuelPurchases, vehicles, updateFuelPurchase } = useStore();
+  
+  const [isLoading, setIsLoading] = useState(false);
+  const [date, setDate] = useState<Date>(new Date());
+  const [vehicleId, setVehicleId] = useState("");
+  const [fuelType, setFuelType] = useState("");
+  const [quantity, setQuantity] = useState("");
+  const [pricePerLiter, setPricePerLiter] = useState("");
+  const [totalPrice, setTotalPrice] = useState("");
+  const [mileage, setMileage] = useState("");
+  const [station, setStation] = useState("");
+  const [notes, setNotes] = useState("");
+  
   useEffect(() => {
-    if (vehicles.length === 0) {
-      fetchVehicles();
-    }
-    if (fuelPurchases.length === 0) {
-      fetchFuelPurchases();
-    }
-  }, [vehicles.length, fuelPurchases.length, fetchVehicles, fetchFuelPurchases]);
-
-  // Find the current purchase
-  const purchase = fuelPurchases.find(p => p.id === id);
-
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      vehicleId: purchase?.vehicleId || '',
-      date: purchase?.date ? new Date(purchase.date) : new Date(),
-      quantity: purchase?.quantity || 0,
-      pricePerLiter: purchase?.pricePerLiter || 0,
-      totalPrice: purchase?.totalPrice || 0,
-      stationName: purchase?.stationName || '',
-      location: {
-        lat: purchase?.location?.lat || 0,
-        lng: purchase?.location?.lng || 0,
-        address: purchase?.location?.address || '',
-      },
-      paymentMethod: purchase?.paymentMethod || 'card',
-      mileage: purchase?.mileage || 0,
-      notes: purchase?.notes || '',
-    },
-  });
-
-  // Update form values when purchase is loaded
-  useEffect(() => {
-    if (purchase) {
-      form.reset({
-        vehicleId: purchase.vehicleId,
-        date: new Date(purchase.date),
-        quantity: purchase.quantity,
-        pricePerLiter: purchase.pricePerLiter,
-        totalPrice: purchase.totalPrice,
-        stationName: purchase.stationName,
-        location: {
-          lat: purchase.location?.lat || 0,
-          lng: purchase.location?.lng || 0,
-          address: purchase.location?.address || '',
-        },
-        paymentMethod: purchase.paymentMethod,
-        mileage: purchase.mileage,
-        notes: purchase.notes || '',
-      });
-    }
-  }, [purchase, form]);
-
-  // Update total price when quantity or price per liter changes
-  useEffect(() => {
-    if (isPriceCalculationLocked) {
-      const subscription = form.watch((value, { name }) => {
-        if (name === 'quantity' || name === 'pricePerLiter') {
-          const quantity = form.getValues('quantity') || 0;
-          const pricePerLiter = form.getValues('pricePerLiter') || 0;
-          const calculatedTotal = quantity * pricePerLiter;
-          
-          if (!isNaN(calculatedTotal) && calculatedTotal > 0) {
-            form.setValue('totalPrice', parseFloat(calculatedTotal.toFixed(2)), { 
-              shouldValidate: true 
-            });
-          }
-        }
-      });
-      
-      return () => subscription.unsubscribe();
-    }
-  }, [form, isPriceCalculationLocked]);
-
-  // Update price per liter when total price and quantity change
-  useEffect(() => {
-    const subscription = form.watch((value, { name }) => {
-      if (!isPriceCalculationLocked && name === 'totalPrice') {
-        const quantity = form.getValues('quantity') || 0;
-        const totalPrice = form.getValues('totalPrice') || 0;
-        
-        if (quantity > 0) {
-          const calculatedPricePerLiter = totalPrice / quantity;
-          
-          if (!isNaN(calculatedPricePerLiter) && calculatedPricePerLiter > 0) {
-            form.setValue('pricePerLiter', parseFloat(calculatedPricePerLiter.toFixed(3)), { 
-              shouldValidate: true 
-            });
-          }
-        }
+    if (id) {
+      const purchase = fuelPurchases.find((p) => p.id === id);
+      if (purchase) {
+        setDate(new Date(purchase.date));
+        setVehicleId(purchase.vehicleId);
+        setFuelType(purchase.fuelType);
+        setQuantity(purchase.quantity.toString());
+        setPricePerLiter(purchase.pricePerLiter.toString());
+        setTotalPrice(purchase.totalPrice.toString());
+        if (purchase.mileage) setMileage(purchase.mileage.toString());
+        if (purchase.station) setStation(purchase.station);
+        if (purchase.notes) setNotes(purchase.notes);
+      } else {
+        toast({
+          title: "Erreur",
+          description: "Achat de carburant non trouvé",
+          variant: "destructive",
+        });
+        navigate("/purchases");
       }
-    });
-    
-    return () => subscription.unsubscribe();
-  }, [form, isPriceCalculationLocked]);
-
-  const onSubmit = async (values: FormValues) => {
-    if (!id) return;
-    
-    setIsSubmitting(true);
-    try {
-      await updateFuelPurchase(id, values as Partial<FuelPurchase>);
-      toast({
-        title: "Achat mis à jour",
-        description: "L'achat de carburant a été mis à jour avec succès",
-      });
-      navigate('/purchases');
-    } catch (error) {
-      console.error("Error updating purchase:", error);
+    }
+  }, [id, fuelPurchases, toast, navigate]);
+  
+  // Calculate total price when quantity or price per liter changes
+  useEffect(() => {
+    if (quantity && pricePerLiter) {
+      const calculatedTotal = (parseFloat(quantity) * parseFloat(pricePerLiter)).toFixed(2);
+      setTotalPrice(calculatedTotal);
+    }
+  }, [quantity, pricePerLiter]);
+  
+  // Update quantity when total price and price per liter changes
+  useEffect(() => {
+    if (totalPrice && pricePerLiter && parseFloat(pricePerLiter) > 0) {
+      const calculatedQuantity = (parseFloat(totalPrice) / parseFloat(pricePerLiter)).toFixed(2);
+      setQuantity(calculatedQuantity);
+    }
+  }, [totalPrice, pricePerLiter]);
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!vehicleId || !fuelType || !quantity || !pricePerLiter || !totalPrice || !date) {
       toast({
         title: "Erreur",
-        description: "Une erreur est survenue lors de la mise à jour de l'achat",
+        description: "Veuillez remplir tous les champs obligatoires",
         variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
+      return;
+    }
+    
+    if (id) {
+      setIsLoading(true);
+      
+      try {
+        const updatedPurchase: Partial<FuelPurchase> = {
+          date: date.toISOString(),
+          vehicleId,
+          fuelType,
+          quantity: parseFloat(quantity),
+          pricePerLiter: parseFloat(pricePerLiter),
+          totalPrice: parseFloat(totalPrice),
+        };
+        
+        if (mileage) updatedPurchase.mileage = parseFloat(mileage);
+        if (station) updatedPurchase.station = station;
+        if (notes) updatedPurchase.notes = notes;
+        
+        await updateFuelPurchase(id, updatedPurchase);
+        
+        toast({
+          title: "Succès",
+          description: "Achat de carburant mis à jour avec succès",
+        });
+        
+        navigate("/purchases");
+      } catch (error) {
+        console.error("Error updating fuel purchase:", error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de mettre à jour l'achat de carburant",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
-
-  // Custom calendar component for date selection
-  const CustomCalendarHeader = (props: CalendarProps) => {
-    const { month, onMonthChange, localeText } = props;
-    if (!month) return null;
-
-    const currMonth = month;
-    const prevMonth = new Date(month);
-    prevMonth.setMonth(prevMonth.getMonth() - 1);
-    const nextMonth = new Date(month);
-    nextMonth.setMonth(nextMonth.getMonth() + 1);
-
+  
+  if (!id) {
     return (
-      <div className="flex justify-between items-center py-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onMonthChange && onMonthChange(prevMonth)}
-          className="h-7 w-7 p-0 flex items-center justify-center"
-        >
-          <span className="sr-only">Mois précédent</span>
-          &lt;
-        </Button>
-        <div className="text-sm font-medium">
-          {format(currMonth, 'MMMM yyyy', { locale: fr })}
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onMonthChange && onMonthChange(nextMonth)}
-          className="h-7 w-7 p-0 flex items-center justify-center"
-        >
-          <span className="sr-only">Mois suivant</span>
-          &gt;
+      <div className="space-y-4">
+        <h1 className="text-2xl font-bold">ID d'achat manquant</h1>
+        <Button variant="outline" onClick={() => navigate("/purchases")}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Retour à la liste
         </Button>
       </div>
     );
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-full">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
   }
-
-  if (!purchase && !isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center">
-          <Button variant="ghost" asChild className="mr-2">
-            <Link to="/purchases"><ArrowLeft className="mr-2 h-4 w-4" />Retour</Link>
-          </Button>
-        </div>
-        <Card>
-          <CardContent className="pt-6">
-            <p>Achat non trouvé</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
+  
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center">
-        <Button variant="ghost" asChild className="mr-2">
-          <Link to="/purchases"><ArrowLeft className="mr-2 h-4 w-4" />Retour</Link>
+      <div className="flex items-center justify-between">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold tracking-tight">Modifier un Achat</h1>
+          <p className="text-muted-foreground">
+            Modifiez les détails de votre achat de carburant
+          </p>
+        </div>
+        <Button variant="outline" onClick={() => navigate("/purchases")}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Retour
         </Button>
-        <h1 className="text-3xl font-bold tracking-tight">Modifier un achat</h1>
       </div>
-
+      
       <Card>
         <CardHeader>
-          <CardTitle>Informations de l'achat</CardTitle>
-          <CardDescription>Modifiez les détails de votre achat de carburant</CardDescription>
+          <CardTitle>Détails de l'achat</CardTitle>
         </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="vehicleId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Véhicule</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Sélectionnez un véhicule" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {vehicles.map((vehicle) => (
-                            <SelectItem key={vehicle.id} value={vehicle.id}>
-                              {vehicle.name} ({vehicle.make} {vehicle.model})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="date"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Date</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={"outline"}
-                              className={cn(
-                                "pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "dd MMMM yyyy", { locale: fr })
-                              ) : (
-                                <span>Sélectionnez une date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) => date > new Date()}
-                            initialFocus
-                            locale={fr}
-                            components={{
-                              Header: CustomCalendarHeader
-                            }}
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="stationName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Station-service</FormLabel>
-                      <FormControl>
-                        <Input placeholder="TotalEnergies, Esso, etc." {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="paymentMethod"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Moyen de paiement</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Sélectionnez un moyen de paiement" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="card">Carte bancaire</SelectItem>
-                          <SelectItem value="cash">Espèces</SelectItem>
-                          <SelectItem value="app">Application mobile</SelectItem>
-                          <SelectItem value="other">Autre</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="mileage"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Kilométrage</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="12345" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="quantity"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Quantité (litres)</FormLabel>
-                      <FormControl>
-                        <Input type="number" step="0.01" placeholder="45.67" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="pricePerLiter"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Prix au litre (€)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          step="0.001" 
-                          placeholder="1.899" 
-                          {...field} 
-                          disabled={!isPriceCalculationLocked}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="totalPrice"
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="flex justify-between">
-                        <FormLabel>Prix total (€)</FormLabel>
-                        <Button 
-                          type="button"
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-5 text-xs"
-                          onClick={() => setIsPriceCalculationLocked(!isPriceCalculationLocked)}
-                        >
-                          {isPriceCalculationLocked ? "Déverrouiller" : "Verrouiller"}
-                        </Button>
-                      </div>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          step="0.01" 
-                          placeholder="85.67" 
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormDescription className="text-xs">
-                        {isPriceCalculationLocked 
-                          ? "Le prix total est calculé automatiquement (quantité × prix au litre)" 
-                          : "Le prix au litre est calculé automatiquement (prix total ÷ quantité)"}
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+        <form onSubmit={handleSubmit}>
+          <CardContent className="space-y-4">
+            {/* Date picker */}
+            <div className="space-y-2">
+              <Label htmlFor="date">Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !date && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {date ? format(date, "dd MMMM yyyy", { locale: fr }) : "Sélectionner une date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={(newDate) => newDate && setDate(newDate)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            
+            {/* Vehicle selection */}
+            <div className="space-y-2">
+              <Label htmlFor="vehicle">Véhicule</Label>
+              {vehicles.length > 0 ? (
+                <Select value={vehicleId} onValueChange={setVehicleId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionnez un véhicule" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {vehicles.map((vehicle) => (
+                      <SelectItem key={vehicle.id} value={vehicle.id}>
+                        {vehicle.name} - {vehicle.licensePlate}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="text-center p-4 border rounded-md">
+                  <p className="text-muted-foreground">Aucun véhicule disponible</p>
+                  <Button
+                    variant="link"
+                    className="mt-2 p-0"
+                    onClick={() => navigate("/vehicles/add")}
+                  >
+                    Ajouter un véhicule
+                  </Button>
+                </div>
+              )}
+            </div>
+            
+            {/* Fuel type */}
+            <div className="space-y-2">
+              <Label htmlFor="fuelType">Type de carburant</Label>
+              <Select value={fuelType} onValueChange={setFuelType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionnez un type de carburant" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="SP95">SP95</SelectItem>
+                  <SelectItem value="SP95-E10">SP95-E10</SelectItem>
+                  <SelectItem value="SP98">SP98</SelectItem>
+                  <SelectItem value="Diesel">Diesel</SelectItem>
+                  <SelectItem value="E85">E85</SelectItem>
+                  <SelectItem value="GPL">GPL</SelectItem>
+                  <SelectItem value="Électricité">Électricité</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {/* Price fields */}
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="space-y-2">
+                <Label htmlFor="pricePerLiter">Prix par litre (€)</Label>
+                <Input
+                  id="pricePerLiter"
+                  type="number"
+                  step="0.001"
+                  min="0"
+                  value={pricePerLiter}
+                  onChange={(e) => setPricePerLiter(e.target.value)}
+                  placeholder="2.005"
                 />
               </div>
-              <FormField
-                control={form.control}
-                name="notes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Notes (optionnel)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Notes additionnelles" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+              
+              <div className="space-y-2">
+                <Label htmlFor="quantity">Quantité (L)</Label>
+                <Input
+                  id="quantity"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={quantity}
+                  onChange={(e) => setQuantity(e.target.value)}
+                  placeholder="40.00"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="totalPrice">Prix total (€)</Label>
+                <Input
+                  id="totalPrice"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={totalPrice}
+                  onChange={(e) => setTotalPrice(e.target.value)}
+                  placeholder="80.20"
+                />
+              </div>
+            </div>
+            
+            {/* Additional fields */}
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="mileage">Kilométrage</Label>
+                <Input
+                  id="mileage"
+                  type="number"
+                  min="0"
+                  value={mileage}
+                  onChange={(e) => setMileage(e.target.value)}
+                  placeholder="15000"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="station">Station-service</Label>
+                <Input
+                  id="station"
+                  value={station}
+                  onChange={(e) => setStation(e.target.value)}
+                  placeholder="Nom de la station"
+                />
+              </div>
+            </div>
+            
+            {/* Notes */}
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes</Label>
+              <Input
+                id="notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Notes additionnelles"
               />
-              <div className="flex justify-end">
-                <Button type="button" variant="outline" className="mr-2" asChild>
-                  <Link to="/purchases">Annuler</Link>
-                </Button>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            </div>
+          </CardContent>
+          <CardFooter className="flex justify-between">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate("/purchases")}
+            >
+              Annuler
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Skeleton className="h-4 w-4 mr-2 rounded-full" />
+                  Mise à jour...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
                   Mettre à jour
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </CardContent>
+                </>
+              )}
+            </Button>
+          </CardFooter>
+        </form>
       </Card>
     </div>
   );
