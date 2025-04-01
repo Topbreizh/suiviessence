@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { FuelPurchase, Vehicle, PaymentMethod, FuelType } from '@/types';
@@ -197,14 +196,26 @@ export const useStore = create<StoreState>()(
         set({ isLoading: true });
         try {
           const id = uuidv4();
-          const vehicleWithId = { ...vehicle, id };
+          
+          // Create a clean vehicle object without undefined values
+          const vehicleData: Record<string, any> = {
+            ...vehicle,
+            id
+          };
+          
+          // Remove undefined values before sending to Firestore
+          Object.keys(vehicleData).forEach(key => {
+            if (vehicleData[key] === undefined) {
+              delete vehicleData[key];
+            }
+          });
           
           // Use setDoc with a specific ID instead of addDoc
-          await setDoc(doc(db, "vehicles", id), vehicleWithId);
+          await setDoc(doc(db, "vehicles", id), vehicleData);
           
           // Update local state
           set((state) => ({
-            vehicles: [...state.vehicles, vehicleWithId],
+            vehicles: [...state.vehicles, vehicleData as Vehicle],
             isLoading: false
           }));
           
