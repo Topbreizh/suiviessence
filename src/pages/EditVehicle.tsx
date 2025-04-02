@@ -37,8 +37,10 @@ const EditVehicle = () => {
 
   // Fetch vehicles if not already loaded
   useEffect(() => {
-    fetchVehicles();
-  }, [fetchVehicles]);
+    if (vehicles.length === 0) {
+      fetchVehicles();
+    }
+  }, [vehicles.length, fetchVehicles]);
 
   // Find the current vehicle
   const vehicle = vehicles.find(v => v.id === id);
@@ -81,10 +83,6 @@ const EditVehicle = () => {
     setIsSubmitting(true);
     try {
       await updateVehicle(id, values as Partial<Vehicle>);
-      
-      // Actualisez les données après la mise à jour
-      await fetchVehicles();
-      
       toast({
         title: "Véhicule mis à jour",
         description: "Le véhicule a été mis à jour avec succès",

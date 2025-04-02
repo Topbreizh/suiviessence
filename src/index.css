@@ -100,7 +100,7 @@
   }
 
   #root {
-    background-color: rgba(255, 255, 255, 0.85); /* Augmenté l'opacité pour mieux voir le contenu */
+    background-color: rgba(255, 255, 255, 0.75); /* Transparence réduite pour mieux voir l'arrière-plan */
     min-height: 100vh;
   }
 }
@@ -126,19 +126,5 @@
   .transparent-bg {
     background-color: rgba(255, 255, 255, 0.5);
     backdrop-filter: blur(8px);
-  }
-  
-  /* Style pour les cartes avec fond semi-transparent */
-  .card {
-    background-color: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(5px);
-  }
-  
-  /* Style pour Google Maps */
-  .map-container {
-    height: 400px;
-    width: 100%;
-    border-radius: 0.5rem;
-    overflow: hidden;
   }
 }

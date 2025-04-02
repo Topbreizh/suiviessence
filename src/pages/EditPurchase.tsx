@@ -21,7 +21,7 @@ const EditPurchase = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { fuelPurchases, vehicles, updateFuelPurchase, fetchFuelPurchases } = useStore();
+  const { fuelPurchases, vehicles, updateFuelPurchase } = useStore();
   
   const [isLoading, setIsLoading] = useState(false);
   const [date, setDate] = useState<Date>(new Date());
@@ -34,18 +34,13 @@ const EditPurchase = () => {
   const [station, setStation] = useState("");
   const [notes, setNotes] = useState("");
   
-  // Récupérer les données à l'initialisation
-  useEffect(() => {
-    fetchFuelPurchases();
-  }, [fetchFuelPurchases]);
-  
   useEffect(() => {
     if (id) {
       const purchase = fuelPurchases.find((p) => p.id === id);
       if (purchase) {
         setDate(new Date(purchase.date));
         setVehicleId(purchase.vehicleId);
-        setFuelType(purchase.fuelType || "");
+        setFuelType(purchase.fuelType);
         setQuantity(purchase.quantity.toString());
         setPricePerLiter(purchase.pricePerLiter.toString());
         setTotalPrice(purchase.totalPrice.toString());
@@ -95,7 +90,7 @@ const EditPurchase = () => {
       
       try {
         const updatedPurchase: Partial<FuelPurchase> = {
-          date: date,
+          date: date.toISOString(),
           vehicleId,
           fuelType,
           quantity: parseFloat(quantity),
@@ -113,9 +108,6 @@ const EditPurchase = () => {
           title: "Succès",
           description: "Achat de carburant mis à jour avec succès",
         });
-        
-        // Rafraîchissons les données après la mise à jour
-        await fetchFuelPurchases();
         
         navigate("/purchases");
       } catch (error) {

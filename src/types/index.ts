@@ -5,16 +5,15 @@ export interface FuelPurchase {
   quantity: number; // in liters
   pricePerLiter: number;
   totalPrice: number;
-  fuelType: string; // Ajout du type de carburant
-  station?: string; // Ajout de la station (optionnel)
+  stationName: string;
   location: {
     lat: number;
     lng: number;
     address: string;
   };
   vehicleId: string;
-  paymentMethod?: PaymentMethod;
-  mileage?: number; // in km
+  paymentMethod: PaymentMethod;
+  mileage: number; // in km
   notes?: string;
 }
 
@@ -57,20 +56,4 @@ export interface StationStats {
   visitCount: number;
   averagePrice: number;
   totalSpent: number;
-}
-
-// Ajout d'un type pour les stations-service
-export interface GasStation {
-  id: string;
-  name: string;
-  address: string;
-  location: {
-    lat: number;
-    lng: number;
-  };
-  fuelTypes: string[];
-  prices?: {
-    [key: string]: number;
-  };
-  lastUpdated?: Date;
 }
