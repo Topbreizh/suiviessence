@@ -7,8 +7,7 @@ import {
   deleteDoc, 
   getDocs, 
   query, 
-  orderBy, 
-  Timestamp 
+  orderBy 
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { toast } from '@/hooks/use-toast';
@@ -16,7 +15,6 @@ import type { Store } from '@/types';
 
 export interface StoreSlice {
   stores: Store[];
-  isLoadingStores: boolean;
   fetchStores: () => Promise<void>;
   addStore: (store: Omit<Store, 'id' | 'createdAt' | 'updatedAt'>) => Promise<string>;
   updateStore: (id: string, store: Partial<Store>) => Promise<void>;
@@ -25,13 +23,12 @@ export interface StoreSlice {
 
 export const createStoreSlice = (set: any, get: any) => ({
   stores: [],
-  isLoadingStores: false,
   
-  // Fetch all stores
+  // Fetch all stores from Firestore
   fetchStores: async () => {
-    set({ isLoadingStores: true });
+    set({ isLoading: true });
     try {
-      const q = query(collection(db, "stores"), orderBy("name", "asc"));
+      const q = query(collection(db, "stores"), orderBy("name"));
       const querySnapshot = await getDocs(q);
       
       const stores: Store[] = [];
@@ -40,17 +37,12 @@ export const createStoreSlice = (set: any, get: any) => ({
         stores.push({
           ...data,
           id: doc.id,
-          createdAt: data.createdAt?.toDate() || new Date(),
-          updatedAt: data.updatedAt?.toDate() || new Date(),
-          // Ensure location is properly structured
-          location: data.location ? {
-            lat: data.location.lat || 0,
-            lng: data.location.lng || 0
-          } : undefined
+          createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),
+          updatedAt: data.updatedAt ? data.updatedAt.toDate() : new Date(),
         } as Store);
       });
       
-      set({ stores, isLoadingStores: false });
+      set({ stores, isLoading: false });
     } catch (error) {
       console.error("Error fetching stores:", error);
       toast({
@@ -58,34 +50,32 @@ export const createStoreSlice = (set: any, get: any) => ({
         description: "Impossible de récupérer les magasins",
         variant: "destructive"
       });
-      set({ isLoadingStores: false });
+      set({ isLoading: false });
     }
   },
   
-  // Add a store
-  addStore: async (store) => {
-    set({ isLoadingStores: true });
+  // Add a store to Firestore
+  addStore: async (storeData) => {
+    set({ isLoading: true });
     try {
-      // Add timestamps
-      const storeData = {
-        ...store,
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now()
+      const now = new Date();
+      const store = {
+        ...storeData,
+        createdAt: now,
+        updatedAt: now,
       };
       
-      const docRef = await addDoc(collection(db, "stores"), storeData);
+      const docRef = await addDoc(collection(db, "stores"), store);
       
-      // Update local state
+      // Update local state with the new store
       const newStore = {
         ...store,
         id: docRef.id,
-        createdAt: new Date(),
-        updatedAt: new Date()
       };
       
       set((state: any) => ({
         stores: [...state.stores, newStore],
-        isLoadingStores: false
+        isLoading: false
       }));
       
       return docRef.id;
@@ -96,44 +86,30 @@ export const createStoreSlice = (set: any, get: any) => ({
         description: "Impossible d'ajouter le magasin",
         variant: "destructive"
       });
-      set({ isLoadingStores: false });
+      set({ isLoading: false });
       throw error;
     }
   },
   
-  // Update a store
-  updateStore: async (id, store) => {
-    set({ isLoadingStores: true });
+  // Update a store in Firestore
+  updateStore: async (id, storeData) => {
+    set({ isLoading: true });
     try {
       const storeRef = doc(db, "stores", id);
-      
-      // Add updated timestamp
-      const updateData = {
-        ...store,
-        updatedAt: Timestamp.now()
+      const updatedData = {
+        ...storeData,
+        updatedAt: new Date(),
       };
       
-      await updateDoc(storeRef, updateData);
+      await updateDoc(storeRef, updatedData);
       
       // Update local state
-      set((state: any) => {
-        const updatedStores = state.stores.map((s: Store) => {
-          if (s.id === id) {
-            return {
-              ...s,
-              ...store,
-              updatedAt: new Date()
-            };
-          }
-          return s;
-        });
-        
-        return {
-          stores: updatedStores,
-          isLoadingStores: false
-        };
-      });
-      
+      set((state: any) => ({
+        stores: state.stores.map((s: Store) =>
+          s.id === id ? { ...s, ...updatedData } : s
+        ),
+        isLoading: false
+      }));
     } catch (error) {
       console.error("Error updating store:", error);
       toast({
@@ -141,21 +117,21 @@ export const createStoreSlice = (set: any, get: any) => ({
         description: "Impossible de mettre à jour le magasin",
         variant: "destructive"
       });
-      set({ isLoadingStores: false });
+      set({ isLoading: false });
       throw error;
     }
   },
   
-  // Delete a store
+  // Delete a store from Firestore
   deleteStore: async (id) => {
-    set({ isLoadingStores: true });
+    set({ isLoading: true });
     try {
       await deleteDoc(doc(db, "stores", id));
       
       // Update local state
       set((state: any) => ({
         stores: state.stores.filter((s: Store) => s.id !== id),
-        isLoadingStores: false
+        isLoading: false
       }));
     } catch (error) {
       console.error("Error deleting store:", error);
@@ -164,7 +140,7 @@ export const createStoreSlice = (set: any, get: any) => ({
         description: "Impossible de supprimer le magasin",
         variant: "destructive"
       });
-      set({ isLoadingStores: false });
+      set({ isLoading: false });
       throw error;
     }
   },

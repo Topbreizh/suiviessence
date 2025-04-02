@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useStore } from "@/store";
 import { useForm } from "react-hook-form";
@@ -122,13 +121,29 @@ const StoreManagement = () => {
   const onSubmit = async (data: StoreFormValues) => {
     try {
       if (editingStore) {
-        await updateStore(editingStore.id, data);
+        await updateStore(editingStore.id, {
+          name: data.name,
+          address: data.address,
+          chainName: data.chainName,
+          hasGasStation: data.hasGasStation,
+          stationId: data.stationId,
+          openingHours: data.openingHours,
+          notes: data.notes,
+        });
         toast({
           title: "Succès",
           description: "Magasin mis à jour avec succès",
         });
       } else {
-        await addStore(data);
+        await addStore({
+          name: data.name,
+          address: data.address,
+          chainName: data.chainName,
+          hasGasStation: data.hasGasStation,
+          stationId: data.stationId,
+          openingHours: data.openingHours,
+          notes: data.notes,
+        });
         toast({
           title: "Succès",
           description: "Magasin ajouté avec succès",
@@ -139,6 +154,11 @@ const StoreManagement = () => {
       form.reset();
     } catch (error) {
       console.error("Error saving store:", error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de l'enregistrement du magasin",
+        variant: "destructive"
+      });
     }
   };
 
