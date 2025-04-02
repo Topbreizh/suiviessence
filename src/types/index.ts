@@ -14,6 +14,7 @@ export interface FuelPurchase {
   vehicleId: string;
   paymentMethod: PaymentMethod;
   mileage: number; // in km
+  fuelType: string; // Ajout du type de carburant
   notes?: string;
 }
 
@@ -57,3 +58,4 @@ export interface StationStats {
   averagePrice: number;
   totalSpent: number;
 }
+

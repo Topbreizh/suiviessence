@@ -111,12 +111,29 @@ export const createFuelPurchaseSlice = (set: any, get: any) => ({
       await updateDoc(purchaseRef, updateData);
       
       // Update local state
-      set((state: any) => ({
-        fuelPurchases: state.fuelPurchases.map((p: FuelPurchase) =>
-          p.id === id ? { ...p, ...purchase } : p
-        ),
-        isLoading: false
-      }));
+      set((state: any) => {
+        const updatedPurchases = state.fuelPurchases.map((p: FuelPurchase) => {
+          if (p.id === id) {
+            // Create a proper merged object
+            return {
+              ...p,
+              ...purchase,
+              // Ensure date is properly converted back
+              date: purchase.date || p.date
+            };
+          }
+          return p;
+        });
+        
+        return {
+          fuelPurchases: updatedPurchases,
+          isLoading: false
+        };
+      });
+      
+      // Fetch data again to ensure everything is in sync
+      await get().fetchFuelPurchases();
+      
     } catch (error) {
       console.error("Error updating fuel purchase:", error);
       toast({

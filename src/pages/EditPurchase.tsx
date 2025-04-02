@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FuelPurchase } from "@/types";
+import { FuelPurchase, PaymentMethod } from "@/types";
 import { cn } from "@/lib/utils";
 
 const EditPurchase = () => {
@@ -32,6 +32,7 @@ const EditPurchase = () => {
   const [totalPrice, setTotalPrice] = useState("");
   const [mileage, setMileage] = useState("");
   const [station, setStation] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card");
   const [notes, setNotes] = useState("");
   
   useEffect(() => {
@@ -44,8 +45,9 @@ const EditPurchase = () => {
         setQuantity(purchase.quantity.toString());
         setPricePerLiter(purchase.pricePerLiter.toString());
         setTotalPrice(purchase.totalPrice.toString());
-        if (purchase.mileage) setMileage(purchase.mileage.toString());
-        if (purchase.station) setStation(purchase.station);
+        setMileage(purchase.mileage.toString());
+        setStation(purchase.stationName);
+        setPaymentMethod(purchase.paymentMethod);
         if (purchase.notes) setNotes(purchase.notes);
       } else {
         toast({
@@ -90,16 +92,22 @@ const EditPurchase = () => {
       
       try {
         const updatedPurchase: Partial<FuelPurchase> = {
-          date: date.toISOString(),
+          date,
           vehicleId,
           fuelType,
           quantity: parseFloat(quantity),
           pricePerLiter: parseFloat(pricePerLiter),
           totalPrice: parseFloat(totalPrice),
+          mileage: parseFloat(mileage),
+          stationName: station,
+          paymentMethod,
+          location: {
+            lat: 0,
+            lng: 0,
+            address: ""
+          }
         };
         
-        if (mileage) updatedPurchase.mileage = parseFloat(mileage);
-        if (station) updatedPurchase.station = station;
         if (notes) updatedPurchase.notes = notes;
         
         await updateFuelPurchase(id, updatedPurchase);
@@ -297,6 +305,22 @@ const EditPurchase = () => {
                   placeholder="Nom de la station"
                 />
               </div>
+            </div>
+            
+            {/* Payment Method */}
+            <div className="space-y-2">
+              <Label htmlFor="paymentMethod">Moyen de paiement</Label>
+              <Select value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as PaymentMethod)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionnez un moyen de paiement" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="card">Carte bancaire</SelectItem>
+                  <SelectItem value="cash">Espèces</SelectItem>
+                  <SelectItem value="app">Application mobile</SelectItem>
+                  <SelectItem value="other">Autre</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             
             {/* Notes */}
