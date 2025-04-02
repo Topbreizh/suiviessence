@@ -4,8 +4,9 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import type { FuelPurchase, Vehicle } from '@/types';
 import { createVehicleSlice, type VehicleSlice } from './vehicleStore';
 import { createFuelPurchaseSlice, type FuelPurchaseSlice } from './fuelPurchaseStore';
+import { createGasStationSlice, type GasStationSlice } from './gasStationStore';
 
-interface StoreState extends VehicleSlice, FuelPurchaseSlice {
+interface StoreState extends VehicleSlice, FuelPurchaseSlice, GasStationSlice {
   isLoading: boolean;
 }
 
@@ -19,6 +20,9 @@ export const useStore = create<StoreState>()(
       
       // Include fuel purchase slice
       ...createFuelPurchaseSlice(set, get),
+      
+      // Include gas station slice
+      ...createGasStationSlice(set, get),
     }),
     {
       name: 'gasoline-guru-storage',

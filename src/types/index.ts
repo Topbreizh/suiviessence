@@ -1,4 +1,3 @@
-
 export interface FuelPurchase {
   id: string;
   date: Date;
@@ -52,10 +51,25 @@ export interface VehicleStats {
   fillCount: number;
 }
 
+export interface GasStation {
+  id: string;
+  name: string;
+  address: string;
+  location: {
+    lat: number;
+    lng: number;
+  };
+  brand?: string;
+  priceRegular?: number;
+  pricePremium?: number;
+  priceDiesel?: number;
+  lastUpdated?: Date;
+  notes?: string;
+}
+
 export interface StationStats {
   stationName: string;
   visitCount: number;
   averagePrice: number;
   totalSpent: number;
 }
-
