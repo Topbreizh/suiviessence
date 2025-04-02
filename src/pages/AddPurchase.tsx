@@ -1,346 +1,423 @@
 
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useStore } from '@/store';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { useToast } from '@/components/ui/use-toast';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import { format } from 'date-fns';
-import { Calendar as CalendarIcon, Car, Fuel, Info } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { PaymentMethod } from '@/types';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useStore } from "@/store";
+import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import { Calendar } from "@/components/ui/calendar";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { ArrowLeft, CalendarIcon, Plus, Store } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { GasStation } from "@/types";
+import { cn } from "@/lib/utils";
+import GasStationMap from "@/components/GasStationMap";
 
 const AddPurchase = () => {
   const navigate = useNavigate();
-  const { vehicles, addFuelPurchase } = useStore();
   const { toast } = useToast();
+  const { 
+    vehicles, 
+    addFuelPurchase,
+    fetchVehicles,
+    fetchFuelPurchases,
+    isLoading: storeIsLoading 
+  } = useStore();
   
+  const [isLoading, setIsLoading] = useState(false);
   const [date, setDate] = useState<Date>(new Date());
-  const [vehicleId, setVehicleId] = useState('');
-  const [quantity, setQuantity] = useState('');
-  const [pricePerLiter, setPricePerLiter] = useState('');
-  const [totalPrice, setTotalPrice] = useState('');
-  const [stationName, setStationName] = useState('');
-  const [mileage, setMileage] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
-  const [notes, setNotes] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [vehicleId, setVehicleId] = useState("");
+  const [fuelType, setFuelType] = useState("");
+  const [quantity, setQuantity] = useState("");
+  const [pricePerLiter, setPricePerLiter] = useState("");
+  const [totalPrice, setTotalPrice] = useState("");
+  const [mileage, setMileage] = useState("");
+  const [station, setStation] = useState("");
+  const [notes, setNotes] = useState("");
+  const [location, setLocation] = useState({ lat: 0, lng: 0, address: "" });
+  const [showMap, setShowMap] = useState(false);
   
-  // Update total price when quantity or price per liter changes
-  const updateTotalPrice = () => {
-    const qty = parseFloat(quantity);
-    const price = parseFloat(pricePerLiter);
-    
-    if (!isNaN(qty) && !isNaN(price)) {
-      setTotalPrice((qty * price).toFixed(2));
+  // Récupérer les données à l'initialisation
+  useEffect(() => {
+    fetchVehicles();
+    fetchFuelPurchases();
+  }, [fetchVehicles, fetchFuelPurchases]);
+
+  // Calculate total price when quantity or price per liter changes
+  useEffect(() => {
+    if (quantity && pricePerLiter) {
+      const calculatedTotal = (parseFloat(quantity) * parseFloat(pricePerLiter)).toFixed(2);
+      setTotalPrice(calculatedTotal);
     }
-  };
+  }, [quantity, pricePerLiter]);
   
-  // Update price per liter when total price or quantity changes
-  const updatePricePerLiter = () => {
-    const qty = parseFloat(quantity);
-    const total = parseFloat(totalPrice);
-    
-    if (!isNaN(qty) && !isNaN(total) && qty > 0) {
-      setPricePerLiter((total / qty).toFixed(3));
+  // Update quantity when total price and price per liter changes
+  useEffect(() => {
+    if (totalPrice && pricePerLiter && parseFloat(pricePerLiter) > 0) {
+      const calculatedQuantity = (parseFloat(totalPrice) / parseFloat(pricePerLiter)).toFixed(2);
+      setQuantity(calculatedQuantity);
     }
-  };
+  }, [totalPrice, pricePerLiter]);
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!vehicleId) {
-      toast({
-        title: "Véhicule manquant",
-        description: "Veuillez sélectionner un véhicule",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    const qtyValue = parseFloat(quantity);
-    const priceValue = parseFloat(pricePerLiter);
-    const totalValue = parseFloat(totalPrice);
-    const mileageValue = parseFloat(mileage);
-    
-    if (isNaN(qtyValue) || qtyValue <= 0) {
-      toast({
-        title: "Quantité invalide",
-        description: "Veuillez entrer une quantité valide",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (isNaN(priceValue) || priceValue <= 0) {
-      toast({
-        title: "Prix invalide",
-        description: "Veuillez entrer un prix par litre valide",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (isNaN(mileageValue) || mileageValue <= 0) {
-      toast({
-        title: "Kilométrage invalide",
-        description: "Veuillez entrer un kilométrage valide",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (!stationName.trim()) {
-      toast({
-        title: "Station manquante",
-        description: "Veuillez entrer le nom de la station-service",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setIsSubmitting(true);
-    
-    try {
-      addFuelPurchase({
-        date,
-        vehicleId,
-        quantity: qtyValue,
-        pricePerLiter: priceValue,
-        totalPrice: totalValue,
-        stationName: stationName.trim(),
-        location: {
-          lat: 0,
-          lng: 0,
-          address: '',
-        },
-        mileage: mileageValue,
-        paymentMethod,
-        notes: notes.trim(),
-      });
-      
-      toast({
-        title: "Achat ajouté",
-        description: "L'achat de carburant a été ajouté avec succès",
-      });
-      
-      navigate('/purchases');
-    } catch (error) {
+    if (!vehicleId || !fuelType || !quantity || !pricePerLiter || !totalPrice || !date) {
       toast({
         title: "Erreur",
-        description: "Une erreur est survenue lors de l'ajout de l'achat",
+        description: "Veuillez remplir tous les champs obligatoires",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      const newPurchase = {
+        date,
+        vehicleId,
+        fuelType,
+        quantity: parseFloat(quantity),
+        pricePerLiter: parseFloat(pricePerLiter),
+        totalPrice: parseFloat(totalPrice),
+        station,
+        location: {
+          lat: location.lat || 0,
+          lng: location.lng || 0,
+          address: location.address || ""
+        },
+        mileage: mileage ? parseFloat(mileage) : undefined,
+        notes,
+      };
+      
+      await addFuelPurchase(newPurchase);
+      
+      toast({
+        title: "Succès",
+        description: "Achat de carburant ajouté avec succès",
+      });
+      
+      // Actualiser les données après l'ajout
+      await fetchFuelPurchases();
+      
+      navigate("/purchases");
+    } catch (error) {
+      console.error("Error adding fuel purchase:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible d'ajouter l'achat de carburant",
         variant: "destructive",
       });
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
+    }
+  };
+  
+  const handleStationSelect = (station: GasStation) => {
+    setStation(station.name);
+    setLocation({
+      lat: station.location.lat,
+      lng: station.location.lng,
+      address: station.address
+    });
+    setShowMap(false);
+  };
+  
+  // Obtenir la position actuelle
+  const getCurrentLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+            address: ""
+          });
+          setShowMap(true);
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+          toast({
+            title: "Erreur de localisation",
+            description: "Impossible d'obtenir votre position actuelle",
+            variant: "destructive",
+          });
+          // Utiliser une position par défaut (Paris)
+          setLocation({
+            lat: 48.856614,
+            lng: 2.3522219,
+            address: ""
+          });
+          setShowMap(true);
+        }
+      );
+    } else {
+      toast({
+        title: "Géolocalisation non supportée",
+        description: "Votre navigateur ne supporte pas la géolocalisation",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  // Gérer l'affichage de la carte
+  const toggleMap = () => {
+    if (!showMap && !location.lat && !location.lng) {
+      getCurrentLocation();
+    } else {
+      setShowMap(!showMap);
     }
   };
   
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-        <div>
+      <div className="flex items-center justify-between">
+        <div className="space-y-1">
           <h1 className="text-3xl font-bold tracking-tight">Nouvel Achat</h1>
-          <p className="text-muted-foreground">Enregistrez un nouvel achat de carburant</p>
+          <p className="text-muted-foreground">
+            Enregistrez un nouvel achat de carburant
+          </p>
         </div>
+        <Button variant="outline" onClick={() => navigate("/purchases")}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Retour
+        </Button>
       </div>
       
-      <form onSubmit={handleSubmit}>
-        <div className="grid gap-6 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Informations Générales</CardTitle>
-              <CardDescription>Détails de base sur votre achat</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="date">Date</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !date && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {date ? format(date, "dd MMMM yyyy") : "Sélectionner une date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={date}
-                      onSelect={(date) => date && setDate(date)}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="vehicle">Véhicule</Label>
-                <Select value={vehicleId} onValueChange={setVehicleId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un véhicule" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {vehicles.map((vehicle) => (
-                      <SelectItem key={vehicle.id} value={vehicle.id}>
-                        {vehicle.name} ({vehicle.make} {vehicle.model})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="station">Station-service</Label>
-                <Input
-                  id="station"
-                  placeholder="Nom de la station"
-                  value={stationName}
-                  onChange={(e) => setStationName(e.target.value)}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="mileage">Kilométrage</Label>
-                <Input
-                  id="mileage"
-                  type="number"
-                  placeholder="Kilométrage actuel"
-                  value={mileage}
-                  onChange={(e) => setMileage(e.target.value)}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="payment">Moyen de paiement</Label>
-                <Select 
-                  value={paymentMethod} 
-                  onValueChange={(value) => setPaymentMethod(value as PaymentMethod)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un moyen de paiement" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="card">Carte bancaire</SelectItem>
-                    <SelectItem value="cash">Espèces</SelectItem>
-                    <SelectItem value="app">Application mobile</SelectItem>
-                    <SelectItem value="other">Autre</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Détails du Plein</CardTitle>
-              <CardDescription>Informations sur la quantité et le prix</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="quantity">Quantité (litres)</Label>
-                <Input
-                  id="quantity"
-                  type="number"
-                  step="0.01"
-                  placeholder="Quantité en litres"
-                  value={quantity}
-                  onChange={(e) => {
-                    setQuantity(e.target.value);
-                    if (e.target.value && pricePerLiter) {
-                      updateTotalPrice();
-                    }
-                  }}
-                  onBlur={updateTotalPrice}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="price">Prix au litre (€)</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  step="0.001"
-                  placeholder="Prix par litre"
-                  value={pricePerLiter}
-                  onChange={(e) => {
-                    setPricePerLiter(e.target.value);
-                    if (e.target.value && quantity) {
-                      updateTotalPrice();
-                    }
-                  }}
-                  onBlur={updateTotalPrice}
-                />
-              </div>
-              
-              <Separator />
-              
-              <div className="space-y-2">
-                <Label htmlFor="total">Prix total (€)</Label>
-                <Input
-                  id="total"
-                  type="number"
-                  step="0.01"
-                  placeholder="Prix total"
-                  value={totalPrice}
-                  onChange={(e) => {
-                    setTotalPrice(e.target.value);
-                    if (e.target.value && quantity) {
-                      updatePricePerLiter();
-                    }
-                  }}
-                  onBlur={updatePricePerLiter}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="notes">Notes (optionnel)</Label>
-                <Input
-                  id="notes"
-                  placeholder="Notes ou commentaires"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                />
-              </div>
-              
-              <div className="rounded-md bg-muted p-4 text-sm flex items-start">
-                <Info className="h-4 w-4 mr-2 mt-0.5 text-muted-foreground" />
-                <p className="text-muted-foreground">
-                  Vous pouvez saisir deux valeurs parmi : quantité, prix au litre et prix total. 
-                  La troisième sera calculée automatiquement.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+      <Tabs defaultValue="basic" className="w-full">
+        <TabsList className="grid grid-cols-2 mb-4 w-full sm:w-[400px]">
+          <TabsTrigger value="basic">Informations de base</TabsTrigger>
+          <TabsTrigger value="station">Station & Localisation</TabsTrigger>
+        </TabsList>
         
-        <div className="mt-6 flex items-center justify-end gap-4">
-          <Button variant="outline" type="button" onClick={() => navigate('/purchases')}>
-            Annuler
-          </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            <Fuel className="mr-2 h-4 w-4" />
-            Enregistrer l'Achat
-          </Button>
-        </div>
-      </form>
+        <form onSubmit={handleSubmit}>
+          <TabsContent value="basic">
+            <Card>
+              <CardHeader>
+                <CardTitle>Détails de l'achat</CardTitle>
+                <CardDescription>
+                  Entrez les informations de base de votre achat de carburant
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Date picker */}
+                <div className="space-y-2">
+                  <Label htmlFor="date">Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !date && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {date ? format(date, "dd MMMM yyyy", { locale: fr }) : "Sélectionner une date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={date}
+                        onSelect={(newDate) => newDate && setDate(newDate)}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                
+                {/* Vehicle selection */}
+                <div className="space-y-2">
+                  <Label htmlFor="vehicle">Véhicule</Label>
+                  {vehicles.length > 0 ? (
+                    <Select value={vehicleId} onValueChange={setVehicleId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionnez un véhicule" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {vehicles.map((vehicle) => (
+                          <SelectItem key={vehicle.id} value={vehicle.id}>
+                            {vehicle.name} - {vehicle.licensePlate}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="text-center p-4 border rounded-md">
+                      <p className="text-muted-foreground">Aucun véhicule disponible</p>
+                      <Button
+                        variant="link"
+                        className="mt-2 p-0"
+                        onClick={() => navigate("/vehicles/add")}
+                      >
+                        Ajouter un véhicule
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Fuel type */}
+                <div className="space-y-2">
+                  <Label htmlFor="fuelType">Type de carburant</Label>
+                  <Select value={fuelType} onValueChange={setFuelType}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionnez un type de carburant" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="SP95">SP95</SelectItem>
+                      <SelectItem value="SP95-E10">SP95-E10</SelectItem>
+                      <SelectItem value="SP98">SP98</SelectItem>
+                      <SelectItem value="Diesel">Diesel</SelectItem>
+                      <SelectItem value="E85">E85</SelectItem>
+                      <SelectItem value="GPL">GPL</SelectItem>
+                      <SelectItem value="Électricité">Électricité</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {/* Price fields */}
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="pricePerLiter">Prix par litre (€)</Label>
+                    <Input
+                      id="pricePerLiter"
+                      type="number"
+                      step="0.001"
+                      min="0"
+                      value={pricePerLiter}
+                      onChange={(e) => setPricePerLiter(e.target.value)}
+                      placeholder="2.005"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="quantity">Quantité (L)</Label>
+                    <Input
+                      id="quantity"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={quantity}
+                      onChange={(e) => setQuantity(e.target.value)}
+                      placeholder="40.00"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="totalPrice">Prix total (€)</Label>
+                    <Input
+                      id="totalPrice"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={totalPrice}
+                      onChange={(e) => setTotalPrice(e.target.value)}
+                      placeholder="80.20"
+                    />
+                  </div>
+                </div>
+                
+                {/* Mileage */}
+                <div className="space-y-2">
+                  <Label htmlFor="mileage">Kilométrage</Label>
+                  <Input
+                    id="mileage"
+                    type="number"
+                    min="0"
+                    value={mileage}
+                    onChange={(e) => setMileage(e.target.value)}
+                    placeholder="15000"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="station">
+            <Card>
+              <CardHeader>
+                <CardTitle>Station & Localisation</CardTitle>
+                <CardDescription>
+                  Indiquez la station-service et sa localisation
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Station field */}
+                <div className="space-y-2">
+                  <Label htmlFor="station">Station-service</Label>
+                  <div className="flex space-x-2">
+                    <Input
+                      id="station"
+                      value={station}
+                      onChange={(e) => setStation(e.target.value)}
+                      placeholder="Nom de la station"
+                      className="flex-1"
+                    />
+                    <Button 
+                      type="button" 
+                      variant="outline"
+                      onClick={toggleMap}
+                    >
+                      <Store className="h-4 w-4 mr-2" />
+                      {showMap ? "Masquer la carte" : "Trouver"}
+                    </Button>
+                  </div>
+                </div>
+                
+                {/* Map for selecting a station */}
+                {showMap && (
+                  <GasStationMap 
+                    onStationSelect={handleStationSelect}
+                    initialLocation={location.lat && location.lng ? { lat: location.lat, lng: location.lng } : undefined}
+                  />
+                )}
+                
+                {/* Notes */}
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Notes</Label>
+                  <Input
+                    id="notes"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Notes additionnelles"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <div className="flex justify-end mt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate("/purchases")}
+              className="mr-2"
+            >
+              Annuler
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Skeleton className="h-4 w-4 mr-2 rounded-full" />
+                  Enregistrement...
+                </>
+              ) : (
+                <>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Enregistrer
+                </>
+              )}
+            </Button>
+          </div>
+        </form>
+      </Tabs>
     </div>
   );
 };
