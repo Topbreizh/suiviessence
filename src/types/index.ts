@@ -15,7 +15,6 @@ export interface FuelPurchase {
   paymentMethod: PaymentMethod;
   mileage: number; // in km
   fuelType: string; // Ajout du type de carburant
-  storeId?: string; // Add store reference
   notes?: string;
 }
 
@@ -53,42 +52,10 @@ export interface VehicleStats {
   fillCount: number;
 }
 
-export interface GasStation {
-  id: string;
-  name: string;
-  address: string;
-  location: {
-    lat: number;
-    lng: number;
-  };
-  brand?: string;
-  priceRegular?: number;
-  pricePremium?: number;
-  priceDiesel?: number;
-  lastUpdated?: Date;
-  notes?: string;
-}
-
-export interface Store {
-  id: string;
-  name: string;
-  address: string;
-  location?: {
-    lat: number;
-    lng: number;
-  };
-  chainName?: string;
-  hasGasStation?: boolean;
-  stationId?: string;
-  openingHours?: string;
-  notes?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 export interface StationStats {
   stationName: string;
   visitCount: number;
   averagePrice: number;
   totalSpent: number;
 }
+

@@ -44,9 +44,7 @@ export const createFuelPurchaseSlice = (set: any, get: any) => ({
             lat: data.location?.lat || 0,
             lng: data.location?.lng || 0,
             address: data.location?.address || ""
-          },
-          // Ensure fuelType is set (backward compatibility)
-          fuelType: data.fuelType || "gasoline"
+          }
         } as FuelPurchase);
       });
       
