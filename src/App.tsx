@@ -15,6 +15,7 @@ import AddVehicle from "@/pages/AddVehicle";
 import EditVehicle from "@/pages/EditVehicle";
 import EditPurchase from "@/pages/EditPurchase";
 import GasStations from "@/pages/GasStations";
+import StoreManagement from "@/pages/StoreManagement";
 import NotFound from "@/pages/NotFound";
 import "./index.css";
 
@@ -38,6 +39,7 @@ const App = () => (
               <Route path="vehicles/edit/:id" element={<EditVehicle />} />
               <Route path="statistics" element={<Statistics />} />
               <Route path="stations" element={<GasStations />} />
+              <Route path="stores" element={<StoreManagement />} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>

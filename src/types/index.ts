@@ -1,3 +1,4 @@
+
 export interface FuelPurchase {
   id: string;
   date: Date;
@@ -14,6 +15,7 @@ export interface FuelPurchase {
   paymentMethod: PaymentMethod;
   mileage: number; // in km
   fuelType: string; // Ajout du type de carburant
+  storeId?: string; // Add store reference
   notes?: string;
 }
 
@@ -65,6 +67,23 @@ export interface GasStation {
   priceDiesel?: number;
   lastUpdated?: Date;
   notes?: string;
+}
+
+export interface Store {
+  id: string;
+  name: string;
+  address: string;
+  location?: {
+    lat: number;
+    lng: number;
+  };
+  chainName?: string;
+  hasGasStation?: boolean;
+  stationId?: string;
+  openingHours?: string;
+  notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface StationStats {
