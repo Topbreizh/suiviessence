@@ -20,7 +20,7 @@ import { Calendar as CalendarIcon, Car, Fuel, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { PaymentMethod } from '@/types';
+import { FuelType, PaymentMethod } from '@/types';
 
 const AddPurchase = () => {
   const navigate = useNavigate();
@@ -36,7 +36,20 @@ const AddPurchase = () => {
   const [mileage, setMileage] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
   const [notes, setNotes] = useState('');
+  const [fuelType, setFuelType] = useState<FuelType>('gasoline');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Get selected vehicle to set default fuel type
+  const selectedVehicle = vehicles.find(vehicle => vehicle.id === vehicleId);
+  
+  // Update fuelType when vehicle changes
+  const handleVehicleChange = (value: string) => {
+    setVehicleId(value);
+    const vehicle = vehicles.find(v => v.id === value);
+    if (vehicle) {
+      setFuelType(vehicle.fuelType);
+    }
+  };
   
   // Update total price when quantity or price per liter changes
   const updateTotalPrice = () => {
@@ -128,6 +141,7 @@ const AddPurchase = () => {
         },
         mileage: mileageValue,
         paymentMethod,
+        fuelType, // Added the fuelType field
         notes: notes.trim(),
       });
       
@@ -193,7 +207,7 @@ const AddPurchase = () => {
               
               <div className="space-y-2">
                 <Label htmlFor="vehicle">Véhicule</Label>
-                <Select value={vehicleId} onValueChange={setVehicleId}>
+                <Select value={vehicleId} onValueChange={handleVehicleChange}>
                   <SelectTrigger>
                     <SelectValue placeholder="Sélectionner un véhicule" />
                   </SelectTrigger>
@@ -203,6 +217,26 @@ const AddPurchase = () => {
                         {vehicle.name} ({vehicle.make} {vehicle.model})
                       </SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="fuelType">Type de carburant</Label>
+                <Select 
+                  value={fuelType} 
+                  onValueChange={(value) => setFuelType(value as FuelType)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner un type de carburant" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gasoline">Essence</SelectItem>
+                    <SelectItem value="diesel">Diesel</SelectItem>
+                    <SelectItem value="electric">Électrique</SelectItem>
+                    <SelectItem value="hybrid">Hybride</SelectItem>
+                    <SelectItem value="lpg">GPL</SelectItem>
+                    <SelectItem value="other">Autre</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
