@@ -17,6 +17,7 @@ import { Info, MapPin } from 'lucide-react';
 const Statistics = () => {
   const { fuelPurchases, vehicles } = useStore();
   const [selectedVehicle, setSelectedVehicle] = useState<string | 'all'>('all');
+  const [selectedStation, setSelectedStation] = useState<string | 'all'>('all');
 
   // Filter purchases by selected vehicle
   const filteredPurchases = selectedVehicle === 'all'
@@ -28,6 +29,11 @@ const Statistics = () => {
     const vehicle = vehicles.find(v => v.id === id);
     return vehicle ? vehicle.name : 'Véhicule inconnu';
   };
+
+  // Get all unique station names
+  const stationNames = Array.from(
+    new Set(fuelPurchases.map(p => p.stationName))
+  ).filter(Boolean).sort();
 
   // Calculate monthly spending
   const monthlyData: Record<string, { month: string, total: number, liters: number, label: string }> = {};
@@ -55,13 +61,15 @@ const Statistics = () => {
     return a.month.localeCompare(b.month);
   });
 
-  // Calculate price evolution
+  // Calculate price evolution with station filter
   const priceData = [...filteredPurchases]
+    .filter(purchase => selectedStation === 'all' || purchase.stationName === selectedStation)
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .map(purchase => ({
       date: format(new Date(purchase.date), 'dd/MM/yy'),
       prix: purchase.pricePerLiter,
-      fullDate: new Date(purchase.date)
+      fullDate: new Date(purchase.date),
+      station: purchase.stationName
     }));
 
   // Calculate spending by vehicle
@@ -187,11 +195,26 @@ const Statistics = () => {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Évolution des Prix</CardTitle>
-            <CardDescription>
-              Évolution du prix au litre
-            </CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div>
+              <CardTitle>Évolution des Prix</CardTitle>
+              <CardDescription>
+                Évolution du prix au litre
+              </CardDescription>
+            </div>
+            <Select value={selectedStation} onValueChange={setSelectedStation}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Toutes les stations" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Toutes les stations</SelectItem>
+                {stationNames.map((station) => (
+                  <SelectItem key={station} value={station}>
+                    {station}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </CardHeader>
           <CardContent>
             {priceData.length > 1 ? (
@@ -217,6 +240,13 @@ const Statistics = () => {
                     />
                     <Tooltip
                       formatter={(value: number) => [`${value.toFixed(3)} €/L`, 'Prix']}
+                      labelFormatter={(label) => {
+                        const dataPoint = priceData.find(p => p.date === label);
+                        if (dataPoint) {
+                          return `${format(dataPoint.fullDate, 'dd MMMM yyyy', { locale: fr })}${selectedStation === 'all' ? ` - ${dataPoint.station}` : ''}`;
+                        }
+                        return label;
+                      }}
                       contentStyle={{
                         backgroundColor: 'var(--card)',
                         borderColor: 'var(--border)',
