@@ -7,7 +7,7 @@ import { GasStation } from '@/types';
 
 interface DeleteConfirmationProps {
   station: GasStation | null;
-  onConfirm: () => Promise<void>;
+  onConfirm: () => void;
   onCancel: () => void;
   isLoading: boolean;
 }

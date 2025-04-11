@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { Fuel, Car, BarChart3, LayoutDashboard, PlusCircle } from "lucide-react";
+import { Fuel, Car, BarChart3, LayoutDashboard, PlusCircle, MapPin } from "lucide-react";
 
 interface SidebarProps {
   open: boolean;
@@ -58,6 +58,12 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
               icon={<PlusCircle className="mr-2 h-5 w-5" />}
               label="Nouveau Véhicule"
               indent
+            />
+            <NavItem
+              to="/stations"
+              active={location.pathname === "/stations"}
+              icon={<MapPin className="mr-2 h-5 w-5" />}
+              label="Stations-service"
             />
             <NavItem
               to="/statistics"
@@ -117,6 +123,13 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
                 label="Nouveau Véhicule"
                 onClick={() => setOpen(false)}
                 indent
+              />
+              <NavItem
+                to="/stations"
+                active={location.pathname === "/stations"}
+                icon={<MapPin className="mr-2 h-5 w-5" />}
+                label="Stations-service"
+                onClick={() => setOpen(false)}
               />
               <NavItem
                 to="/statistics"
