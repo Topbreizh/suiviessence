@@ -1,11 +1,12 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { FuelPurchase } from '@/types';
+import { useStore } from '@/store';
 
 interface PriceEvolutionChartProps {
   purchases: FuelPurchase[];
@@ -18,12 +19,21 @@ const PriceEvolutionChart = ({
   title = "Évolution des Prix", 
   description = "Évolution du prix au litre" 
 }: PriceEvolutionChartProps) => {
+  const { gasStations } = useStore();
   const [selectedStation, setSelectedStation] = useState<string | 'all'>('all');
 
-  // Get all unique station names
-  const stationNames = Array.from(
+  // Get all unique station names from purchases and from the gasStations store
+  const stationNamesFromPurchases = Array.from(
     new Set(purchases.map(p => p.stationName))
-  ).filter(Boolean).sort();
+  ).filter(Boolean);
+  
+  // Get station names from the gasStations store
+  const stationNamesFromStore = gasStations.map(station => station.name);
+  
+  // Combine and remove duplicates
+  const stationNames = Array.from(
+    new Set([...stationNamesFromPurchases, ...stationNamesFromStore])
+  ).sort();
 
   // Calculate price evolution with station filter
   const priceData = [...purchases]

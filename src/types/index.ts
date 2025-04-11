@@ -59,3 +59,17 @@ export interface StationStats {
   totalSpent: number;
 }
 
+// Ajout de l'interface pour les stations
+export interface GasStation {
+  id: string;
+  name: string;
+  address: string;
+  city: string;
+  postalCode: string;
+  latitude?: number;
+  longitude?: number;
+  company?: string; // Total, BP, etc.
+  fuelTypes: string[]; // SP95, SP98, Diesel, etc.
+  notes?: string;
+  isActive: boolean;
+}
