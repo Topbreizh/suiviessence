@@ -136,11 +136,12 @@ const ChargingStationForm = ({
             <Input
               id="pricePerKwh"
               type="number"
-              step="0.01"
+              step="0.001"
+              min="0"
               value={formData.pricePerKwh || ''}
               onChange={(e) => setFormData(prev => ({ 
                 ...prev, 
-                pricePerKwh: e.target.value ? parseFloat(e.target.value) : undefined 
+                pricePerKwh: e.target.value ? parseFloat(e.target.value.replace(',', '.')) : undefined 
               }))}
               placeholder="Ex: 0.35"
             />
