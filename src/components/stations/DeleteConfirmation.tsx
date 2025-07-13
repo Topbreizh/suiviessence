@@ -3,10 +3,10 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { DialogFooter } from '@/components/ui/dialog';
 import { Trash2 } from 'lucide-react';
-import { GasStation } from '@/types';
+import { GasStation, ChargingStation } from '@/types';
 
 interface DeleteConfirmationProps {
-  station: GasStation | null;
+  station: GasStation | ChargingStation | null;
   onConfirm: () => void;
   onCancel: () => void;
   isLoading: boolean;

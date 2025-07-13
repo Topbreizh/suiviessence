@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { Fuel, Car, BarChart3, LayoutDashboard, PlusCircle, MapPin } from "lucide-react";
+import { Fuel, Car, BarChart3, LayoutDashboard, PlusCircle, MapPin, Zap } from "lucide-react";
 
 interface SidebarProps {
   open: boolean;
@@ -64,6 +64,19 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
               active={location.pathname === "/stations"}
               icon={<MapPin className="mr-2 h-5 w-5" />}
               label="Stations-service"
+            />
+            <NavItem
+              to="/charging-stations"
+              active={location.pathname === "/charging-stations"}
+              icon={<Zap className="mr-2 h-5 w-5" />}
+              label="Bornes de Recharge"
+            />
+            <NavItem
+              to="/electric-charge/add"
+              active={location.pathname === "/electric-charge/add"}
+              icon={<PlusCircle className="mr-2 h-5 w-5" />}
+              label="Nouvelle Recharge"
+              indent
             />
             <NavItem
               to="/statistics"
@@ -130,6 +143,21 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
                 icon={<MapPin className="mr-2 h-5 w-5" />}
                 label="Stations-service"
                 onClick={() => setOpen(false)}
+              />
+              <NavItem
+                to="/charging-stations"
+                active={location.pathname === "/charging-stations"}
+                icon={<Zap className="mr-2 h-5 w-5" />}
+                label="Bornes de Recharge"
+                onClick={() => setOpen(false)}
+              />
+              <NavItem
+                to="/electric-charge/add"
+                active={location.pathname === "/electric-charge/add"}
+                icon={<PlusCircle className="mr-2 h-5 w-5" />}
+                label="Nouvelle Recharge"
+                onClick={() => setOpen(false)}
+                indent
               />
               <NavItem
                 to="/statistics"

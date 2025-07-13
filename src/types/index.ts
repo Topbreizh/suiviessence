@@ -73,3 +73,45 @@ export interface GasStation {
   notes?: string;
   isActive: boolean;
 }
+
+// Interface pour les bornes de recharge électrique
+export interface ChargingStation {
+  id: string;
+  name: string;
+  address: string;
+  city: string;
+  postalCode: string;
+  latitude?: number;
+  longitude?: number;
+  operator?: string; // Ionity, Tesla, Fastned, etc.
+  connectorTypes: string[]; // Type2, CCS, CHAdeMO, etc.
+  maxPower?: number; // in kW
+  pricePerKwh?: number;
+  numberOfChargers?: number;
+  fastCharging: boolean; // DC fast charging or AC
+  notes?: string;
+  isActive: boolean;
+}
+
+// Interface pour les recharges électriques
+export interface ElectricCharge {
+  id: string;
+  date: Date;
+  energyAmount: number; // in kWh
+  pricePerKwh: number;
+  totalPrice: number;
+  stationName: string;
+  location: {
+    lat: number;
+    lng: number;
+    address: string;
+  };
+  vehicleId: string;
+  paymentMethod: PaymentMethod;
+  mileage: number; // in km
+  chargingPower?: number; // in kW
+  chargingDuration?: number; // in minutes
+  batteryLevelStart?: number; // in %
+  batteryLevelEnd?: number; // in %
+  notes?: string;
+}
