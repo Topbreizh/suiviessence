@@ -66,7 +66,7 @@ const AddElectricCharge = () => {
     }
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!vehicleId) {
@@ -122,7 +122,18 @@ const AddElectricCharge = () => {
     setIsSubmitting(true);
     
     try {
-      addElectricCharge({
+      console.log('Tentative d\'ajout de recharge électrique:', {
+        date,
+        vehicleId,
+        energyAmount: energyValue,
+        pricePerKwh: priceValue,
+        totalPrice: totalValue,
+        stationName: stationName.trim(),
+        mileage: mileageValue,
+        paymentMethod,
+      });
+      
+      await addElectricCharge({
         date,
         vehicleId,
         energyAmount: energyValue,
@@ -143,6 +154,8 @@ const AddElectricCharge = () => {
         notes: notes.trim(),
       });
       
+      console.log('Recharge électrique ajoutée avec succès');
+      
       toast({
         title: "Recharge ajoutée",
         description: "La recharge électrique a été ajoutée avec succès",
@@ -150,6 +163,7 @@ const AddElectricCharge = () => {
       
       navigate('/purchases');
     } catch (error) {
+      console.error('Erreur lors de l\'ajout de la recharge:', error);
       toast({
         title: "Erreur",
         description: "Une erreur est survenue lors de l'ajout de la recharge",
