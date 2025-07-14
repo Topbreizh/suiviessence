@@ -63,11 +63,18 @@ export const createElectricChargeSlice = (set: any, get: any) => ({
   addElectricCharge: async (charge) => {
     set({ isLoading: true });
     try {
-      // Convert Date to Firestore Timestamp
-      const chargeData = {
+      // Convert Date to Firestore Timestamp and remove undefined fields
+      const chargeData: any = {
         ...charge,
         date: Timestamp.fromDate(new Date(charge.date))
       };
+      
+      // Remove undefined optional fields to prevent Firebase errors
+      if (chargeData.chargingPower === undefined) delete chargeData.chargingPower;
+      if (chargeData.chargingDuration === undefined) delete chargeData.chargingDuration;
+      if (chargeData.batteryLevelStart === undefined) delete chargeData.batteryLevelStart;
+      if (chargeData.batteryLevelEnd === undefined) delete chargeData.batteryLevelEnd;
+      if (chargeData.notes === undefined || chargeData.notes === '') delete chargeData.notes;
       
       const docRef = await addDoc(collection(db, "electricCharges"), chargeData);
       
