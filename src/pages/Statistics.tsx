@@ -15,7 +15,7 @@ import { fr } from 'date-fns/locale';
 import { Info, MapPin } from 'lucide-react';
 
 const Statistics = () => {
-  const { fuelPurchases, vehicles } = useStore();
+  const { fuelPurchases, vehicles, electricCharges } = useStore();
   const [selectedVehicle, setSelectedVehicle] = useState<string | 'all'>('all');
   const [selectedStation, setSelectedStation] = useState<string | 'all'>('all');
 
@@ -35,9 +35,10 @@ const Statistics = () => {
     new Set(fuelPurchases.map(p => p.stationName))
   ).filter(Boolean).sort();
 
-  // Calculate monthly spending
-  const monthlyData: Record<string, { month: string, total: number, liters: number, label: string }> = {};
+  // Calculate monthly spending (including electric charges)
+  const monthlyData: Record<string, { month: string, totalFuel: number, totalElectric: number, total: number, liters: number, kwh: number, label: string }> = {};
   
+  // Add fuel purchases
   filteredPurchases.forEach(purchase => {
     const date = new Date(purchase.date);
     const monthYear = format(date, 'MM/yyyy');
@@ -46,14 +47,45 @@ const Statistics = () => {
     if (!monthlyData[monthYear]) {
       monthlyData[monthYear] = {
         month: monthYear,
+        totalFuel: 0,
+        totalElectric: 0,
         total: 0,
         liters: 0,
+        kwh: 0,
         label: monthLabel
       };
     }
     
+    monthlyData[monthYear].totalFuel += purchase.totalPrice;
     monthlyData[monthYear].total += purchase.totalPrice;
     monthlyData[monthYear].liters += purchase.quantity;
+  });
+
+  // Add electric charges (filter by vehicle if selected)
+  const filteredElectricCharges = selectedVehicle === 'all'
+    ? electricCharges
+    : electricCharges.filter(c => c.vehicleId === selectedVehicle);
+
+  filteredElectricCharges.forEach(charge => {
+    const date = new Date(charge.date);
+    const monthYear = format(date, 'MM/yyyy');
+    const monthLabel = format(date, 'MMM yyyy', { locale: fr });
+    
+    if (!monthlyData[monthYear]) {
+      monthlyData[monthYear] = {
+        month: monthYear,
+        totalFuel: 0,
+        totalElectric: 0,
+        total: 0,
+        liters: 0,
+        kwh: 0,
+        label: monthLabel
+      };
+    }
+    
+    monthlyData[monthYear].totalElectric += charge.totalPrice;
+    monthlyData[monthYear].total += charge.totalPrice;
+    monthlyData[monthYear].kwh += charge.energyAmount;
   });
   
   // Convert to array and sort by date
@@ -72,15 +104,20 @@ const Statistics = () => {
       station: purchase.stationName
     }));
 
-  // Calculate spending by vehicle
+  // Calculate spending by vehicle (including electric charges)
   const vehicleSpendingData = vehicles.map(vehicle => {
     const vehiclePurchases = fuelPurchases.filter(p => p.vehicleId === vehicle.id);
-    const total = vehiclePurchases.reduce((sum, p) => sum + p.totalPrice, 0);
+    const vehicleCharges = electricCharges.filter(c => c.vehicleId === vehicle.id);
+    const totalFuel = vehiclePurchases.reduce((sum, p) => sum + p.totalPrice, 0);
+    const totalElectric = vehicleCharges.reduce((sum, c) => sum + c.totalPrice, 0);
+    const total = totalFuel + totalElectric;
     
     return {
       name: vehicle.name,
       value: total,
-      id: vehicle.id
+      id: vehicle.id,
+      fuelSpent: totalFuel,
+      electricSpent: totalElectric
     };
   }).filter(v => v.value > 0);
 
@@ -172,8 +209,12 @@ const Statistics = () => {
                       tickLine={{ stroke: 'var(--border)' }}
                       tickFormatter={(value) => `${value} €`}
                     />
-                    <Tooltip
-                      formatter={(value: number) => [`${value.toFixed(2)} €`, 'Total']}
+                     <Tooltip
+                      formatter={(value: number, name: string) => {
+                        if (name === 'totalFuel') return [`${value.toFixed(2)} €`, 'Carburant'];
+                        if (name === 'totalElectric') return [`${value.toFixed(2)} €`, 'Électrique'];
+                        return [`${value.toFixed(2)} €`, 'Total'];
+                      }}
                       contentStyle={{
                         backgroundColor: 'var(--card)',
                         borderColor: 'var(--border)',
@@ -182,10 +223,20 @@ const Statistics = () => {
                       }}
                     />
                     <Bar 
-                      dataKey="total" 
+                      dataKey="totalFuel" 
+                      stackId="a"
                       fill="hsl(var(--primary))" 
+                      radius={[0, 0, 0, 0]} 
+                      maxBarSize={60}
+                      name="Carburant"
+                    />
+                    <Bar 
+                      dataKey="totalElectric" 
+                      stackId="a"
+                      fill="hsl(var(--secondary))" 
                       radius={[4, 4, 0, 0]} 
                       maxBarSize={60}
+                      name="Électrique"
                     />
                   </BarChart>
                 </ResponsiveContainer>
@@ -295,8 +346,12 @@ const Statistics = () => {
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip
+                     <Tooltip
                       formatter={(value: number) => [`${value.toFixed(2)} €`, 'Total']}
+                      labelFormatter={(label) => {
+                        const vehicle = vehicleSpendingData.find(v => v.name === label);
+                        return vehicle ? `${label} (Carburant: ${vehicle.fuelSpent.toFixed(2)}€, Électrique: ${vehicle.electricSpent.toFixed(2)}€)` : label;
+                      }}
                       contentStyle={{
                         backgroundColor: 'var(--card)',
                         borderColor: 'var(--border)',
@@ -366,12 +421,12 @@ const Statistics = () => {
         </Card>
       </div>
 
-      {filteredPurchases.length === 0 && (
+      {filteredPurchases.length === 0 && filteredElectricCharges.length === 0 && (
         <Card>
           <CardContent className="flex items-center p-6">
             <Info className="h-5 w-5 mr-2 text-muted-foreground" />
             <p className="text-muted-foreground">
-              Aucune donnée disponible pour le moment. Ajoutez des achats de carburant pour voir les statistiques.
+              Aucune donnée disponible pour le moment. Ajoutez des achats de carburant ou des recharges électriques pour voir les statistiques.
             </p>
           </CardContent>
         </Card>

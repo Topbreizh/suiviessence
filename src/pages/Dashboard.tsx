@@ -12,7 +12,7 @@ import SpendingOverview from '@/components/dashboard/SpendingOverview';
 import VehicleStats from '@/components/dashboard/VehicleStats';
 
 const Dashboard = () => {
-  const { fuelPurchases, vehicles } = useStore();
+  const { fuelPurchases, vehicles, electricCharges } = useStore();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -32,6 +32,10 @@ const Dashboard = () => {
   const totalLiters = fuelPurchases.reduce((sum, purchase) => sum + purchase.quantity, 0);
   const averagePrice = totalLiters > 0 ? totalSpent / totalLiters : 0;
 
+  // Electric charges stats
+  const totalElectricSpent = electricCharges.reduce((sum, charge) => sum + charge.totalPrice, 0);
+  const totalEnergyConsumed = electricCharges.reduce((sum, charge) => sum + charge.energyAmount, 0);
+
   const thisMonth = new Date().getMonth();
   const thisYear = new Date().getFullYear();
   
@@ -39,8 +43,14 @@ const Dashboard = () => {
     const purchaseDate = new Date(purchase.date);
     return purchaseDate.getMonth() === thisMonth && purchaseDate.getFullYear() === thisYear;
   });
+
+  const thisMonthCharges = electricCharges.filter(charge => {
+    const chargeDate = new Date(charge.date);
+    return chargeDate.getMonth() === thisMonth && chargeDate.getFullYear() === thisYear;
+  });
   
   const monthlySpent = thisMonthPurchases.reduce((sum, purchase) => sum + purchase.totalPrice, 0);
+  const monthlyElectricSpent = thisMonthCharges.reduce((sum, charge) => sum + charge.totalPrice, 0);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -70,7 +80,7 @@ const Dashboard = () => {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="stats-card">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Dépensé</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Carburant</CardTitle>
             <Fuel className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -83,13 +93,26 @@ const Dashboard = () => {
         
         <Card className="stats-card">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Total Électrique</CardTitle>
+            <Car className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalElectricSpent.toFixed(2)} €</div>
+            <p className="text-xs text-muted-foreground">
+              {totalEnergyConsumed.toFixed(2)} kWh au total
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card className="stats-card">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Dépenses du Mois</CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{monthlySpent.toFixed(2)} €</div>
+            <div className="text-2xl font-bold">{(monthlySpent + monthlyElectricSpent).toFixed(2)} €</div>
             <p className="text-xs text-muted-foreground">
-              {thisMonthPurchases.length} pleins ce mois-ci
+              {thisMonthPurchases.length} pleins + {thisMonthCharges.length} recharges
             </p>
           </CardContent>
         </Card>
