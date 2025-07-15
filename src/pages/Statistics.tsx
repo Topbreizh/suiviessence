@@ -18,7 +18,7 @@ const Statistics = () => {
   const { fuelPurchases, vehicles, electricCharges } = useStore();
   const [selectedVehicle, setSelectedVehicle] = useState<string | 'all'>('all');
   const [selectedStation, setSelectedStation] = useState<string | 'all'>('all');
-  const [selectedEnergyType, setSelectedEnergyType] = useState<'all' | 'fuel' | 'electric'>('all');
+  const [selectedFuelType, setSelectedFuelType] = useState<string | 'all'>('all');
 
   // Filter purchases by selected vehicle
   const filteredPurchases = selectedVehicle === 'all'
@@ -31,9 +31,13 @@ const Statistics = () => {
     return vehicle ? vehicle.name : 'Véhicule inconnu';
   };
 
-  // Get all unique station names
+  // Get all unique station names and fuel types
   const stationNames = Array.from(
     new Set(fuelPurchases.map(p => p.stationName))
+  ).filter(Boolean).sort();
+
+  const fuelTypes = Array.from(
+    new Set(fuelPurchases.map(p => p.fuelType))
   ).filter(Boolean).sort();
 
   // Calculate monthly spending (including electric charges)
@@ -94,55 +98,22 @@ const Statistics = () => {
     return a.month.localeCompare(b.month);
   });
 
-  // Calculate price evolution with station and energy type filters
-  let priceData: any[] = [];
-
-  if (selectedEnergyType === 'all' || selectedEnergyType === 'fuel') {
-    const fuelData = [...filteredPurchases]
-      .filter(purchase => selectedStation === 'all' || purchase.stationName === selectedStation)
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-      .map(purchase => ({
-        date: format(new Date(purchase.date), 'dd/MM/yy'),
-        prix: purchase.pricePerLiter,
-        fullDate: new Date(purchase.date),
-        station: purchase.stationName,
-        type: 'Carburant',
-        unit: '€/L'
-      }));
-    
-    if (selectedEnergyType === 'fuel') {
-      priceData = fuelData;
-    } else {
-      priceData.push(...fuelData);
-    }
-  }
-
-  if (selectedEnergyType === 'all' || selectedEnergyType === 'electric') {
-    const filteredElectricCharges = selectedVehicle === 'all'
-      ? electricCharges
-      : electricCharges.filter(c => c.vehicleId === selectedVehicle);
-    
-    const electricData = [...filteredElectricCharges]
-      .filter(charge => selectedStation === 'all' || charge.stationName === selectedStation)
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-      .map(charge => ({
-        date: format(new Date(charge.date), 'dd/MM/yy'),
-        prix: charge.energyAmount > 0 ? charge.totalPrice / charge.energyAmount : 0,
-        fullDate: new Date(charge.date),
-        station: charge.stationName,
-        type: 'Électrique',
-        unit: '€/kWh'
-      }));
-    
-    if (selectedEnergyType === 'electric') {
-      priceData = electricData;
-    } else {
-      priceData.push(...electricData);
-    }
-  }
-
-  // Sort all data by date
-  priceData.sort((a, b) => a.fullDate.getTime() - b.fullDate.getTime());
+  // Calculate price evolution with station and fuel type filters
+  const priceData = [...filteredPurchases]
+    .filter(purchase => {
+      const matchesStation = selectedStation === 'all' || purchase.stationName === selectedStation;
+      const matchesFuelType = selectedFuelType === 'all' || purchase.fuelType === selectedFuelType;
+      return matchesStation && matchesFuelType;
+    })
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .map(purchase => ({
+      date: format(new Date(purchase.date), 'dd/MM/yy'),
+      prix: purchase.pricePerLiter,
+      fullDate: new Date(purchase.date),
+      station: purchase.stationName,
+      fuelType: purchase.fuelType,
+      unit: '€/L'
+    }));
 
   // Calculate spending by vehicle (including electric charges)
   const vehicleSpendingData = vehicles.map(vehicle => {
@@ -291,18 +262,21 @@ const Statistics = () => {
             <div>
               <CardTitle>Évolution des Prix</CardTitle>
               <CardDescription>
-                Évolution du prix par unité d'énergie
+                Évolution du prix au litre par type de carburant
               </CardDescription>
             </div>
             <div className="flex gap-2">
-              <Select value={selectedEnergyType} onValueChange={(value: 'all' | 'fuel' | 'electric') => setSelectedEnergyType(value)}>
+              <Select value={selectedFuelType} onValueChange={setSelectedFuelType}>
                 <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Type d'énergie" />
+                  <SelectValue placeholder="Type de carburant" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tous types</SelectItem>
-                  <SelectItem value="fuel">Carburant</SelectItem>
-                  <SelectItem value="electric">Électrique</SelectItem>
+                  {fuelTypes.map((fuelType) => (
+                    <SelectItem key={fuelType} value={fuelType}>
+                      {fuelType}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <Select value={selectedStation} onValueChange={setSelectedStation}>
@@ -343,14 +317,11 @@ const Statistics = () => {
                       domain={['auto', 'auto']}
                     />
                      <Tooltip
-                      formatter={(value: number, name: string, props: any) => {
-                        const dataPoint = props.payload;
-                        return [`${value.toFixed(3)} ${dataPoint.unit}`, dataPoint.type];
-                      }}
+                      formatter={(value: number) => [`${value.toFixed(3)} €/L`, 'Prix']}
                       labelFormatter={(label) => {
                         const dataPoint = priceData.find(p => p.date === label);
                         if (dataPoint) {
-                          return `${format(dataPoint.fullDate, 'dd MMMM yyyy', { locale: fr })}${selectedStation === 'all' ? ` - ${dataPoint.station}` : ''}`;
+                          return `${format(dataPoint.fullDate, 'dd MMMM yyyy', { locale: fr })} - ${dataPoint.fuelType}${selectedStation === 'all' ? ` - ${dataPoint.station}` : ''}`;
                         }
                         return label;
                       }}
@@ -365,10 +336,10 @@ const Statistics = () => {
                      <Line
                       type="monotone"
                       dataKey="prix"
-                      stroke={selectedEnergyType === 'electric' ? 'hsl(var(--secondary))' : selectedEnergyType === 'fuel' ? 'hsl(var(--primary))' : 'hsl(var(--accent))'}
+                      stroke="hsl(var(--primary))"
                       strokeWidth={2}
-                      dot={{ fill: selectedEnergyType === 'electric' ? 'hsl(var(--secondary))' : selectedEnergyType === 'fuel' ? 'hsl(var(--primary))' : 'hsl(var(--accent))', strokeWidth: 0, r: 4 }}
-                      activeDot={{ fill: selectedEnergyType === 'electric' ? 'hsl(var(--secondary))' : selectedEnergyType === 'fuel' ? 'hsl(var(--primary))' : 'hsl(var(--accent))', strokeWidth: 0, r: 6 }}
+                      dot={{ fill: 'hsl(var(--primary))', strokeWidth: 0, r: 4 }}
+                      activeDot={{ fill: 'hsl(var(--primary))', strokeWidth: 0, r: 6 }}
                       connectNulls={false}
                     />
                   </LineChart>
