@@ -18,6 +18,7 @@ const Statistics = () => {
   const { fuelPurchases, vehicles, electricCharges } = useStore();
   const [selectedVehicle, setSelectedVehicle] = useState<string | 'all'>('all');
   const [selectedStation, setSelectedStation] = useState<string | 'all'>('all');
+  const [selectedEnergyType, setSelectedEnergyType] = useState<'all' | 'fuel' | 'electric'>('all');
 
   // Filter purchases by selected vehicle
   const filteredPurchases = selectedVehicle === 'all'
@@ -93,16 +94,55 @@ const Statistics = () => {
     return a.month.localeCompare(b.month);
   });
 
-  // Calculate price evolution with station filter
-  const priceData = [...filteredPurchases]
-    .filter(purchase => selectedStation === 'all' || purchase.stationName === selectedStation)
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    .map(purchase => ({
-      date: format(new Date(purchase.date), 'dd/MM/yy'),
-      prix: purchase.pricePerLiter,
-      fullDate: new Date(purchase.date),
-      station: purchase.stationName
-    }));
+  // Calculate price evolution with station and energy type filters
+  let priceData: any[] = [];
+
+  if (selectedEnergyType === 'all' || selectedEnergyType === 'fuel') {
+    const fuelData = [...filteredPurchases]
+      .filter(purchase => selectedStation === 'all' || purchase.stationName === selectedStation)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .map(purchase => ({
+        date: format(new Date(purchase.date), 'dd/MM/yy'),
+        prix: purchase.pricePerLiter,
+        fullDate: new Date(purchase.date),
+        station: purchase.stationName,
+        type: 'Carburant',
+        unit: '€/L'
+      }));
+    
+    if (selectedEnergyType === 'fuel') {
+      priceData = fuelData;
+    } else {
+      priceData.push(...fuelData);
+    }
+  }
+
+  if (selectedEnergyType === 'all' || selectedEnergyType === 'electric') {
+    const filteredElectricCharges = selectedVehicle === 'all'
+      ? electricCharges
+      : electricCharges.filter(c => c.vehicleId === selectedVehicle);
+    
+    const electricData = [...filteredElectricCharges]
+      .filter(charge => selectedStation === 'all' || charge.stationName === selectedStation)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .map(charge => ({
+        date: format(new Date(charge.date), 'dd/MM/yy'),
+        prix: charge.energyAmount > 0 ? charge.totalPrice / charge.energyAmount : 0,
+        fullDate: new Date(charge.date),
+        station: charge.stationName,
+        type: 'Électrique',
+        unit: '€/kWh'
+      }));
+    
+    if (selectedEnergyType === 'electric') {
+      priceData = electricData;
+    } else {
+      priceData.push(...electricData);
+    }
+  }
+
+  // Sort all data by date
+  priceData.sort((a, b) => a.fullDate.getTime() - b.fullDate.getTime());
 
   // Calculate spending by vehicle (including electric charges)
   const vehicleSpendingData = vehicles.map(vehicle => {
@@ -251,22 +291,34 @@ const Statistics = () => {
             <div>
               <CardTitle>Évolution des Prix</CardTitle>
               <CardDescription>
-                Évolution du prix au litre
+                Évolution du prix par unité d'énergie
               </CardDescription>
             </div>
-            <Select value={selectedStation} onValueChange={setSelectedStation}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Toutes les stations" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Toutes les stations</SelectItem>
-                {stationNames.map((station) => (
-                  <SelectItem key={station} value={station}>
-                    {station}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex gap-2">
+              <Select value={selectedEnergyType} onValueChange={(value: 'all' | 'fuel' | 'electric') => setSelectedEnergyType(value)}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Type d'énergie" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous types</SelectItem>
+                  <SelectItem value="fuel">Carburant</SelectItem>
+                  <SelectItem value="electric">Électrique</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={selectedStation} onValueChange={setSelectedStation}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Toutes les stations" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toutes les stations</SelectItem>
+                  {stationNames.map((station) => (
+                    <SelectItem key={station} value={station}>
+                      {station}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </CardHeader>
           <CardContent>
             {priceData.length > 1 ? (
@@ -283,15 +335,18 @@ const Statistics = () => {
                       axisLine={{ stroke: 'var(--border)' }}
                       tickLine={{ stroke: 'var(--border)' }}
                     />
-                    <YAxis 
+                     <YAxis 
                       tick={{ fill: 'var(--foreground)' }}
                       axisLine={{ stroke: 'var(--border)' }}
                       tickLine={{ stroke: 'var(--border)' }}
-                      tickFormatter={(value) => `${value.toFixed(2)} €`}
+                      tickFormatter={(value) => `${value.toFixed(3)} €`}
                       domain={['auto', 'auto']}
                     />
                      <Tooltip
-                      formatter={(value: number) => [`${value.toFixed(3)} €/L`, 'Prix']}
+                      formatter={(value: number, name: string, props: any) => {
+                        const dataPoint = props.payload;
+                        return [`${value.toFixed(3)} ${dataPoint.unit}`, dataPoint.type];
+                      }}
                       labelFormatter={(label) => {
                         const dataPoint = priceData.find(p => p.date === label);
                         if (dataPoint) {
@@ -307,13 +362,14 @@ const Statistics = () => {
                         boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
                       }}
                     />
-                    <Line
+                     <Line
                       type="monotone"
                       dataKey="prix"
-                      stroke="hsl(var(--secondary))"
+                      stroke={selectedEnergyType === 'electric' ? 'hsl(var(--secondary))' : selectedEnergyType === 'fuel' ? 'hsl(var(--primary))' : 'hsl(var(--accent))'}
                       strokeWidth={2}
-                      dot={{ fill: 'hsl(var(--secondary))', strokeWidth: 0, r: 4 }}
-                      activeDot={{ fill: 'hsl(var(--secondary))', strokeWidth: 0, r: 6 }}
+                      dot={{ fill: selectedEnergyType === 'electric' ? 'hsl(var(--secondary))' : selectedEnergyType === 'fuel' ? 'hsl(var(--primary))' : 'hsl(var(--accent))', strokeWidth: 0, r: 4 }}
+                      activeDot={{ fill: selectedEnergyType === 'electric' ? 'hsl(var(--secondary))' : selectedEnergyType === 'fuel' ? 'hsl(var(--primary))' : 'hsl(var(--accent))', strokeWidth: 0, r: 6 }}
+                      connectNulls={false}
                     />
                   </LineChart>
                 </ResponsiveContainer>
