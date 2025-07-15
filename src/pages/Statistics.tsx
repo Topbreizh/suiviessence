@@ -216,10 +216,11 @@ const Statistics = () => {
                         return [`${value.toFixed(2)} €`, 'Total'];
                       }}
                       contentStyle={{
-                        backgroundColor: 'var(--card)',
-                        borderColor: 'var(--border)',
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        borderColor: 'hsl(var(--border))',
                         borderRadius: 'var(--radius)',
-                        color: 'var(--card-foreground)'
+                        color: 'hsl(222.2, 84%, 4.9%)',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
                       }}
                     />
                     <Bar 
@@ -289,7 +290,7 @@ const Statistics = () => {
                       tickFormatter={(value) => `${value.toFixed(2)} €`}
                       domain={['auto', 'auto']}
                     />
-                    <Tooltip
+                     <Tooltip
                       formatter={(value: number) => [`${value.toFixed(3)} €/L`, 'Prix']}
                       labelFormatter={(label) => {
                         const dataPoint = priceData.find(p => p.date === label);
@@ -299,10 +300,11 @@ const Statistics = () => {
                         return label;
                       }}
                       contentStyle={{
-                        backgroundColor: 'var(--card)',
-                        borderColor: 'var(--border)',
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        borderColor: 'hsl(var(--border))',
                         borderRadius: 'var(--radius)',
-                        color: 'var(--card-foreground)'
+                        color: 'hsl(222.2, 84%, 4.9%)',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
                       }}
                     />
                     <Line
@@ -353,10 +355,11 @@ const Statistics = () => {
                         return vehicle ? `${label} (Carburant: ${vehicle.fuelSpent.toFixed(2)}€, Électrique: ${vehicle.electricSpent.toFixed(2)}€)` : label;
                       }}
                       contentStyle={{
-                        backgroundColor: 'var(--card)',
-                        borderColor: 'var(--border)',
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        borderColor: 'hsl(var(--border))',
                         borderRadius: 'var(--radius)',
-                        color: 'var(--card-foreground)'
+                        color: 'hsl(222.2, 84%, 4.9%)',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
                       }}
                     />
                     <Legend />
@@ -398,13 +401,14 @@ const Statistics = () => {
                       tickLine={{ stroke: 'var(--border)' }}
                       width={100}
                     />
-                    <Tooltip
+                     <Tooltip
                       formatter={(value: number) => [`${value} visites`, 'Fréquence']}
                       contentStyle={{
-                        backgroundColor: 'var(--card)',
-                        borderColor: 'var(--border)',
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        borderColor: 'hsl(var(--border))',
                         borderRadius: 'var(--radius)',
-                        color: 'var(--card-foreground)'
+                        color: 'hsl(222.2, 84%, 4.9%)',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
                       }}
                     />
                     <Bar 
