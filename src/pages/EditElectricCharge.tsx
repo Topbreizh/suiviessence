@@ -111,17 +111,19 @@ const EditElectricCharge = () => {
     setIsLoading(true);
 
     try {
-      await updateElectricCharge(id, {
+      const updateData = {
         date,
         vehicleId,
         stationName,
         energyAmount: parseFloat(energyAmount),
         pricePerKwh: parseFloat(pricePerKwh),
         totalPrice: parseFloat(totalPrice),
-        batteryLevelStart: batteryLevelStart ? parseInt(batteryLevelStart) : undefined,
-        batteryLevelEnd: batteryLevelEnd ? parseInt(batteryLevelEnd) : undefined,
-        notes: notes || undefined,
-      });
+        ...(batteryLevelStart && { batteryLevelStart: parseInt(batteryLevelStart) }),
+        ...(batteryLevelEnd && { batteryLevelEnd: parseInt(batteryLevelEnd) }),
+        ...(notes && { notes }),
+      };
+
+      await updateElectricCharge(id, updateData);
 
       toast({
         title: "Recharge modifiée",
