@@ -224,32 +224,6 @@ const EditElectricCharge = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="station">Station de recharge</Label>
-                <Select value={stationName} onValueChange={(value) => {
-                  const station = chargingStations.find(s => s.name === value);
-                  if (station) {
-                    setStationName(station.name);
-                  } else {
-                    setStationName(value);
-                  }
-                }}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner une station" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {chargingStations.map((station) => (
-                      <SelectItem key={station.id} value={station.name}>
-                        <div className="flex items-center gap-2">
-                          <Zap className="h-4 w-4" />
-                          {station.name}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
                 <Label htmlFor="stationName">Nom de la station *</Label>
                 <Input
                   id="stationName"
