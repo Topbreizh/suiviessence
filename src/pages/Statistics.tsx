@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useStore } from '@/store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
@@ -15,10 +15,24 @@ import { fr } from 'date-fns/locale';
 import { Info, MapPin } from 'lucide-react';
 
 const Statistics = () => {
-  const { fuelPurchases, vehicles, electricCharges } = useStore();
+  const { 
+    fuelPurchases, 
+    vehicles, 
+    electricCharges, 
+    fetchFuelPurchases, 
+    fetchVehicles, 
+    fetchElectricCharges 
+  } = useStore();
   const [selectedVehicle, setSelectedVehicle] = useState<string | 'all'>('all');
   const [selectedStation, setSelectedStation] = useState<string | 'all'>('all');
   const [selectedFuelType, setSelectedFuelType] = useState<string | 'all'>('all');
+
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchFuelPurchases();
+    fetchVehicles();
+    fetchElectricCharges();
+  }, []);
 
   // Filter purchases by selected vehicle
   const filteredPurchases = selectedVehicle === 'all'
