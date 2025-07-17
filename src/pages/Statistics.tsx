@@ -183,7 +183,7 @@ const Statistics = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Statistiques</h1>
-          <p className="text-muted-foreground">Visualisez vos dépenses en carburant</p>
+          <p className="text-muted-foreground">Visualisez vos dépenses en carburant et électrique</p>
         </div>
         
         <div className="mt-4 md:mt-0 w-full md:w-auto">
@@ -209,8 +209,8 @@ const Statistics = () => {
             <CardTitle>Dépenses Mensuelles</CardTitle>
             <CardDescription>
               {selectedVehicle === 'all' 
-                ? 'Dépenses mensuelles pour tous les véhicules' 
-                : `Dépenses mensuelles pour ${getVehicleName(selectedVehicle)}`}
+                ? 'Dépenses mensuelles pour tous les véhicules (carburant + électrique)' 
+                : `Dépenses mensuelles pour ${getVehicleName(selectedVehicle)} (carburant + électrique)`}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -367,7 +367,7 @@ const Statistics = () => {
           <CardHeader>
             <CardTitle>Répartition par Véhicule</CardTitle>
             <CardDescription>
-              Dépenses totales par véhicule
+              Dépenses totales par véhicule (carburant + électrique)
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -403,7 +403,12 @@ const Statistics = () => {
                         boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
                       }}
                     />
-                    <Legend />
+                     <Legend 
+                       wrapperStyle={{ 
+                         paddingTop: '20px',
+                         fontSize: '12px'
+                       }}
+                     />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
