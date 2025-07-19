@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useStore } from '@/store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,7 +11,7 @@ import {
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell } from 'recharts';
 import { format, getMonth, getYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Info, MapPin } from 'lucide-react';
+import { Info, MapPin, Zap, Fuel } from 'lucide-react';
 
 const Statistics = () => {
   const { 
@@ -169,6 +168,18 @@ const Statistics = () => {
     .sort((a, b) => b.count - a.count)
     .slice(0, 5);
 
+    // Calculate electric charges statistics
+  const electricChargeData = [...filteredElectricCharges]
+  .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+  .map(charge => ({
+    date: format(new Date(charge.date), 'dd/MM/yy'),
+    prix: charge.pricePerKwh,
+    fullDate: new Date(charge.date),
+    station: charge.stationName,
+    unit: '€/kWh',
+    energie: charge.energyAmount
+  }));
+
   // Colors for charts
   const COLORS = ['hsl(var(--primary))', 'hsl(var(--secondary))', '#FF8042', '#00C49F', '#FFBB28'];
 
@@ -201,6 +212,65 @@ const Statistics = () => {
             </SelectContent>
           </Select>
         </div>
+      </div>
+
+      {/* Statistiques rapides */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Carburant</CardTitle>
+            <Fuel className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {filteredPurchases.reduce((sum, p) => sum + p.totalPrice, 0).toFixed(2)} €
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {filteredPurchases.reduce((sum, p) => sum + p.quantity, 0).toFixed(1)} L
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Électrique</CardTitle>
+            <Zap className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {filteredElectricCharges.reduce((sum, c) => sum + c.totalPrice, 0).toFixed(2)} €
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {filteredElectricCharges.reduce((sum, c) => sum + c.energyAmount, 0).toFixed(1)} kWh
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Recharges</CardTitle>
+            <Zap className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{filteredElectricCharges.length}</div>
+            <p className="text-xs text-muted-foreground">
+              sessions de recharge
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pleins</CardTitle>
+            <Fuel className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{filteredPurchases.length}</div>
+            <p className="text-xs text-muted-foreground">
+              achats de carburant
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
@@ -248,6 +318,7 @@ const Statistics = () => {
                         boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
                       }}
                     />
+                    <Legend />
                     <Bar 
                       dataKey="totalFuel" 
                       stackId="a"
@@ -259,12 +330,74 @@ const Statistics = () => {
                     <Bar 
                       dataKey="totalElectric" 
                       stackId="a"
-                      fill="hsl(var(--secondary))" 
+                      fill="hsl(142, 69%, 58%)" 
                       radius={[4, 4, 0, 0]} 
                       maxBarSize={60}
                       name="Électrique"
                     />
                   </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : noDataMessage}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Évolution Prix Électrique</CardTitle>
+            <CardDescription>
+              Évolution du prix du kWh pour les recharges électriques
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {electricChargeData.length > 1 ? (
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={electricChargeData}
+                    margin={{ top: 10, right: 10, left: 10, bottom: 20 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
+                    <XAxis 
+                      dataKey="date" 
+                      tick={{ fill: 'var(--foreground)' }}
+                      axisLine={{ stroke: 'var(--border)' }}
+                      tickLine={{ stroke: 'var(--border)' }}
+                    />
+                     <YAxis 
+                      tick={{ fill: 'var(--foreground)' }}
+                      axisLine={{ stroke: 'var(--border)' }}
+                      tickLine={{ stroke: 'var(--border)' }}
+                      tickFormatter={(value) => `${value.toFixed(3)} €`}
+                      domain={['auto', 'auto']}
+                    />
+                     <Tooltip
+                      formatter={(value: number) => [`${value.toFixed(3)} €/kWh`, 'Prix']}
+                      labelFormatter={(label) => {
+                        const dataPoint = electricChargeData.find(p => p.date === label);
+                        if (dataPoint) {
+                          return `${format(dataPoint.fullDate, 'dd MMMM yyyy', { locale: fr })} - ${dataPoint.station}`;
+                        }
+                        return label;
+                      }}
+                      contentStyle={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        borderColor: 'hsl(var(--border))',
+                        borderRadius: 'var(--radius)',
+                        color: 'hsl(222.2, 84%, 4.9%)',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                      }}
+                    />
+                     <Line
+                      type="monotone"
+                      dataKey="prix"
+                      stroke="hsl(142, 69%, 58%)"
+                      strokeWidth={2}
+                      dot={{ fill: 'hsl(142, 69%, 58%)', strokeWidth: 0, r: 4 }}
+                      activeDot={{ fill: 'hsl(142, 69%, 58%)', strokeWidth: 0, r: 6 }}
+                      connectNulls={false}
+                    />
+                  </LineChart>
                 </ResponsiveContainer>
               </div>
             ) : noDataMessage}
