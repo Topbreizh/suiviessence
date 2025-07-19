@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '@/store';
@@ -12,10 +11,13 @@ import SpendingOverview from '@/components/dashboard/SpendingOverview';
 import VehicleStats from '@/components/dashboard/VehicleStats';
 
 const Dashboard = () => {
-  const { fuelPurchases, vehicles, electricCharges } = useStore();
+  const { fuelPurchases, vehicles, electricCharges, fetchElectricCharges } = useStore();
   const { toast } = useToast();
 
   useEffect(() => {
+    // Fetch electric charges data
+    fetchElectricCharges();
+    
     // Show welcome message on first visit
     const hasVisited = localStorage.getItem('gasoline-guru-visited');
     if (!hasVisited) {
@@ -26,7 +28,7 @@ const Dashboard = () => {
       });
       localStorage.setItem('gasoline-guru-visited', 'true');
     }
-  }, [toast]);
+  }, [toast, fetchElectricCharges]);
 
   const totalSpent = fuelPurchases.reduce((sum, purchase) => sum + purchase.totalPrice, 0);
   const totalLiters = fuelPurchases.reduce((sum, purchase) => sum + purchase.quantity, 0);
