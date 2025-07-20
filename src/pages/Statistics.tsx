@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useStore } from '@/store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +12,7 @@ import {
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell } from 'recharts';
 import { format, getMonth, getYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Info, MapPin, Zap, Fuel } from 'lucide-react';
+import { Info, MapPin, Zap, Fuel, Gauge } from 'lucide-react';
 
 const Statistics = () => {
   const { 
@@ -25,13 +26,15 @@ const Statistics = () => {
   const [selectedVehicle, setSelectedVehicle] = useState<string | 'all'>('all');
   const [selectedStation, setSelectedStation] = useState<string | 'all'>('all');
   const [selectedFuelType, setSelectedFuelType] = useState<string | 'all'>('all');
+  const [kmPeriod, setKmPeriod] = useState<'month' | 'year'>('month');
 
   // Fetch data on component mount
   useEffect(() => {
+    console.log('Fetching data...');
     fetchFuelPurchases();
     fetchVehicles();
     fetchElectricCharges();
-  }, []);
+  }, [fetchFuelPurchases, fetchVehicles, fetchElectricCharges]);
 
   // Filter purchases by selected vehicle
   const filteredPurchases = selectedVehicle === 'all'
@@ -52,6 +55,54 @@ const Statistics = () => {
   const fuelTypes = Array.from(
     new Set(fuelPurchases.map(p => p.fuelType))
   ).filter(Boolean).sort();
+
+  // Calculate total kilometers driven
+  const totalKilometers = filteredPurchases.reduce((sum, purchase) => {
+    return sum + (purchase.kilometers || 0);
+  }, 0);
+
+  // Calculate kilometers by period
+  const kmByPeriod: Record<string, { period: string, kilometers: number, label: string }> = {};
+  
+  filteredPurchases.forEach(purchase => {
+    if (!purchase.kilometers) return;
+    
+    const date = new Date(purchase.date);
+    let periodKey: string;
+    let periodLabel: string;
+    
+    if (kmPeriod === 'month') {
+      periodKey = format(date, 'MM/yyyy');
+      periodLabel = format(date, 'MMM yyyy', { locale: fr });
+    } else {
+      periodKey = format(date, 'yyyy');
+      periodLabel = format(date, 'yyyy');
+    }
+    
+    if (!kmByPeriod[periodKey]) {
+      kmByPeriod[periodKey] = {
+        period: periodKey,
+        kilometers: 0,
+        label: periodLabel
+      };
+    }
+    
+    kmByPeriod[periodKey].kilometers += purchase.kilometers;
+  });
+
+  const kmData = Object.values(kmByPeriod).sort((a, b) => a.period.localeCompare(b.period));
+
+  // Calculate kilometers by vehicle
+  const kmByVehicle = vehicles.map(vehicle => {
+    const vehiclePurchases = fuelPurchases.filter(p => p.vehicleId === vehicle.id);
+    const totalKm = vehiclePurchases.reduce((sum, p) => sum + (p.kilometers || 0), 0);
+    
+    return {
+      name: vehicle.name,
+      value: totalKm,
+      id: vehicle.id
+    };
+  }).filter(v => v.value > 0);
 
   // Calculate monthly spending (including electric charges)
   const monthlyData: Record<string, { month: string, totalFuel: number, totalElectric: number, total: number, liters: number, kwh: number, label: string }> = {};
@@ -189,6 +240,8 @@ const Statistics = () => {
     </div>
   );
 
+  console.log('Kilometers data:', { totalKilometers, kmData, kmByVehicle });
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
@@ -215,7 +268,7 @@ const Statistics = () => {
       </div>
 
       {/* Statistiques rapides */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Carburant</CardTitle>
@@ -242,6 +295,19 @@ const Statistics = () => {
             </div>
             <p className="text-xs text-muted-foreground">
               {filteredElectricCharges.reduce((sum, c) => sum + c.energyAmount, 0).toFixed(1)} kWh
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Kilomètres</CardTitle>
+            <Gauge className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalKilometers.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">
+              kilomètres parcourus
             </p>
           </CardContent>
         </Card>
@@ -343,6 +409,70 @@ const Statistics = () => {
         </Card>
 
         <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div>
+              <CardTitle>Kilomètres Parcourus</CardTitle>
+              <CardDescription>
+                {selectedVehicle === 'all' 
+                  ? `Kilomètres parcourus par ${kmPeriod === 'month' ? 'mois' : 'année'} pour tous les véhicules`
+                  : `Kilomètres parcourus par ${kmPeriod === 'month' ? 'mois' : 'année'} pour ${getVehicleName(selectedVehicle)}`}
+              </CardDescription>
+            </div>
+            <Select value={kmPeriod} onValueChange={(value: 'month' | 'year') => setKmPeriod(value)}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="month">Par mois</SelectItem>
+                <SelectItem value="year">Par année</SelectItem>
+              </SelectContent>
+            </Select>
+          </CardHeader>
+          <CardContent>
+            {kmData.length > 0 ? (
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={kmData}
+                    margin={{ top: 10, right: 10, left: 10, bottom: 20 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
+                    <XAxis 
+                      dataKey="label" 
+                      tick={{ fill: 'var(--foreground)' }}
+                      axisLine={{ stroke: 'var(--border)' }}
+                      tickLine={{ stroke: 'var(--border)' }}
+                    />
+                    <YAxis 
+                      tick={{ fill: 'var(--foreground)' }}
+                      axisLine={{ stroke: 'var(--border)' }}
+                      tickLine={{ stroke: 'var(--border)' }}
+                      tickFormatter={(value) => `${value} km`}
+                    />
+                    <Tooltip
+                      formatter={(value: number) => [`${value} km`, 'Kilomètres']}
+                      contentStyle={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        borderColor: 'hsl(var(--border))',
+                        borderRadius: 'var(--radius)',  
+                        color: 'hsl(222.2, 84%, 4.9%)',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                      }}
+                    />
+                    <Bar 
+                      dataKey="kilometers" 
+                      fill="hsl(var(--accent))" 
+                      radius={[4, 4, 0, 0]} 
+                      maxBarSize={60}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : noDataMessage}
+          </CardContent>
+        </Card>
+
+        <Card>
           <CardHeader>
             <CardTitle>Évolution Prix Électrique</CardTitle>
             <CardDescription>
@@ -398,6 +528,55 @@ const Statistics = () => {
                       connectNulls={false}
                     />
                   </LineChart>
+                </ResponsiveContainer>
+              </div>
+            ) : noDataMessage}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Kilomètres par Véhicule</CardTitle>
+            <CardDescription>
+              Répartition des kilomètres parcourus par véhicule
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {kmByVehicle.length > 0 ? (
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={kmByVehicle}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, value, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {kmByVehicle.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value: number) => [`${value.toLocaleString()} km`, 'Kilomètres']}
+                      contentStyle={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        borderColor: 'hsl(var(--border))',
+                        borderRadius: 'var(--radius)',
+                        color: 'hsl(222.2, 84%, 4.9%)',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                      }}
+                    />
+                    <Legend 
+                      wrapperStyle={{ 
+                        paddingTop: '20px',
+                        fontSize: '12px'
+                      }}
+                    />
+                  </PieChart>
                 </ResponsiveContainer>
               </div>
             ) : noDataMessage}
