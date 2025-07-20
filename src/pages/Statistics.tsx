@@ -25,7 +25,6 @@ const Statistics = () => {
   const [selectedVehicle, setSelectedVehicle] = useState<string | 'all'>('all');
   const [selectedStation, setSelectedStation] = useState<string | 'all'>('all');
   const [selectedFuelType, setSelectedFuelType] = useState<string | 'all'>('all');
-  const [kmPeriod, setKmPeriod] = useState<'month' | 'year'>('month');
 
   // Fetch data on component mount
   useEffect(() => {
@@ -85,59 +84,19 @@ const Statistics = () => {
   const vehicleKilometers = calculateKilometersDriven(filteredPurchases);
   const totalKilometers = Object.values(vehicleKilometers).reduce((sum, km) => sum + km, 0);
 
-  // Calculate kilometers by period
-  const kmByPeriod: Record<string, { period: string, kilometers: number, label: string }> = {};
-  
-  // Group purchases by vehicle first, then calculate differences by period
-  const purchasesByVehicle = filteredPurchases.reduce((acc, purchase) => {
-    if (!acc[purchase.vehicleId]) {
-      acc[purchase.vehicleId] = [];
-    }
-    acc[purchase.vehicleId].push(purchase);
-    return acc;
-  }, {} as Record<string, typeof filteredPurchases>);
+  // Calculate kilometers by vehicle for bar chart
+  const kmByVehicleData = vehicles.map(vehicle => {
+    const totalKm = vehicleKilometers[vehicle.id] || 0;
+    
+    return {
+      name: vehicle.name,
+      kilometers: totalKm,
+      id: vehicle.id
+    };
+  }).filter(v => v.kilometers > 0);
 
-  Object.entries(purchasesByVehicle).forEach(([vehicleId, vehiclePurchases]) => {
-    const sortedPurchases = vehiclePurchases
-      .filter(p => p.mileage && p.mileage > 0)
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-    for (let i = 1; i < sortedPurchases.length; i++) {
-      const currentPurchase = sortedPurchases[i];
-      const previousPurchase = sortedPurchases[i - 1];
-      
-      if (currentPurchase.mileage > previousPurchase.mileage) {
-        const kmDriven = currentPurchase.mileage - previousPurchase.mileage;
-        const date = new Date(currentPurchase.date);
-        
-        let periodKey: string;
-        let periodLabel: string;
-        
-        if (kmPeriod === 'month') {
-          periodKey = format(date, 'MM/yyyy');
-          periodLabel = format(date, 'MMM yyyy', { locale: fr });
-        } else {
-          periodKey = format(date, 'yyyy');
-          periodLabel = format(date, 'yyyy');
-        }
-        
-        if (!kmByPeriod[periodKey]) {
-          kmByPeriod[periodKey] = {
-            period: periodKey,
-            kilometers: 0,
-            label: periodLabel
-          };
-        }
-        
-        kmByPeriod[periodKey].kilometers += kmDriven;
-      }
-    }
-  });
-
-  const kmData = Object.values(kmByPeriod).sort((a, b) => a.period.localeCompare(b.period));
-
-  // Calculate kilometers by vehicle
-  const kmByVehicle = vehicles.map(vehicle => {
+  // Calculate kilometers by vehicle for pie chart
+  const kmByVehiclePie = vehicles.map(vehicle => {
     const totalKm = vehicleKilometers[vehicle.id] || 0;
     
     return {
@@ -292,7 +251,7 @@ const Statistics = () => {
     </div>
   );
 
-  console.log('Kilometers data:', { totalKilometers, kmData, kmByVehicle, vehicleKilometers });
+  console.log('Kilometers data:', { totalKilometers, kmByVehicleData, kmByVehiclePie, vehicleKilometers });
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -461,36 +420,25 @@ const Statistics = () => {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <div>
-              <CardTitle>Kilomètres Parcourus</CardTitle>
-              <CardDescription>
-                {selectedVehicle === 'all' 
-                  ? `Kilomètres parcourus par ${kmPeriod === 'month' ? 'mois' : 'année'} pour tous les véhicules`
-                  : `Kilomètres parcourus par ${kmPeriod === 'month' ? 'mois' : 'année'} pour ${getVehicleName(selectedVehicle)}`}
-              </CardDescription>
-            </div>
-            <Select value={kmPeriod} onValueChange={(value: 'month' | 'year') => setKmPeriod(value)}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="month">Par mois</SelectItem>
-                <SelectItem value="year">Par année</SelectItem>
-              </SelectContent>
-            </Select>
+          <CardHeader>
+            <CardTitle>Kilomètres par Véhicule</CardTitle>
+            <CardDescription>
+              {selectedVehicle === 'all' 
+                ? 'Kilomètres parcourus par véhicule'
+                : `Kilomètres parcourus pour ${getVehicleName(selectedVehicle)}`}
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            {kmData.length > 0 ? (
+            {kmByVehicleData.length > 0 ? (
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
-                    data={kmData}
+                    data={kmByVehicleData}
                     margin={{ top: 10, right: 10, left: 10, bottom: 20 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
                     <XAxis 
-                      dataKey="label" 
+                      dataKey="name" 
                       tick={{ fill: 'var(--foreground)' }}
                       axisLine={{ stroke: 'var(--border)' }}
                       tickLine={{ stroke: 'var(--border)' }}
@@ -502,7 +450,7 @@ const Statistics = () => {
                       tickFormatter={(value) => `${value} km`}
                     />
                     <Tooltip
-                      formatter={(value: number) => [`${value} km`, 'Kilomètres']}
+                      formatter={(value: number) => [`${value.toLocaleString()} km`, 'Kilomètres']}
                       contentStyle={{
                         backgroundColor: 'rgba(255, 255, 255, 0.95)',
                         borderColor: 'hsl(var(--border))',
@@ -594,12 +542,12 @@ const Statistics = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {kmByVehicle.length > 0 ? (
+            {kmByVehiclePie.length > 0 ? (
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={kmByVehicle}
+                      data={kmByVehiclePie}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
@@ -608,7 +556,7 @@ const Statistics = () => {
                       fill="#8884d8"
                       dataKey="value"
                     >
-                      {kmByVehicle.map((entry, index) => (
+                      {kmByVehiclePie.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
