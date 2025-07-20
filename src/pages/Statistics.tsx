@@ -46,6 +46,107 @@ const Statistics = () => {
     return vehicle ? vehicle.name : 'Véhicule inconnu';
   };
 
+  // Calculate kilometers driven from mileage differences
+  const calculateKilometersDriven = (purchases: typeof fuelPurchases) => {
+    const vehicleKm: Record<string, number> = {};
+    
+    // Group purchases by vehicle and sort by date
+    const purchasesByVehicle = purchases.reduce((acc, purchase) => {
+      if (!acc[purchase.vehicleId]) {
+        acc[purchase.vehicleId] = [];
+      }
+      acc[purchase.vehicleId].push(purchase);
+      return acc;
+    }, {} as Record<string, typeof purchases>);
+
+    // Calculate kilometers for each vehicle
+    Object.entries(purchasesByVehicle).forEach(([vehicleId, vehiclePurchases]) => {
+      const sortedPurchases = vehiclePurchases
+        .filter(p => p.mileage && p.mileage > 0)
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+      let totalKm = 0;
+      for (let i = 1; i < sortedPurchases.length; i++) {
+        const currentMileage = sortedPurchases[i].mileage;
+        const previousMileage = sortedPurchases[i - 1].mileage;
+        
+        if (currentMileage > previousMileage) {
+          totalKm += currentMileage - previousMileage;
+        }
+      }
+      
+      vehicleKm[vehicleId] = totalKm;
+    });
+
+    return vehicleKm;
+  };
+
+  // Calculate total kilometers driven
+  const vehicleKilometers = calculateKilometersDriven(filteredPurchases);
+  const totalKilometers = Object.values(vehicleKilometers).reduce((sum, km) => sum + km, 0);
+
+  // Calculate kilometers by period
+  const kmByPeriod: Record<string, { period: string, kilometers: number, label: string }> = {};
+  
+  // Group purchases by vehicle first, then calculate differences by period
+  const purchasesByVehicle = filteredPurchases.reduce((acc, purchase) => {
+    if (!acc[purchase.vehicleId]) {
+      acc[purchase.vehicleId] = [];
+    }
+    acc[purchase.vehicleId].push(purchase);
+    return acc;
+  }, {} as Record<string, typeof filteredPurchases>);
+
+  Object.entries(purchasesByVehicle).forEach(([vehicleId, vehiclePurchases]) => {
+    const sortedPurchases = vehiclePurchases
+      .filter(p => p.mileage && p.mileage > 0)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    for (let i = 1; i < sortedPurchases.length; i++) {
+      const currentPurchase = sortedPurchases[i];
+      const previousPurchase = sortedPurchases[i - 1];
+      
+      if (currentPurchase.mileage > previousPurchase.mileage) {
+        const kmDriven = currentPurchase.mileage - previousPurchase.mileage;
+        const date = new Date(currentPurchase.date);
+        
+        let periodKey: string;
+        let periodLabel: string;
+        
+        if (kmPeriod === 'month') {
+          periodKey = format(date, 'MM/yyyy');
+          periodLabel = format(date, 'MMM yyyy', { locale: fr });
+        } else {
+          periodKey = format(date, 'yyyy');
+          periodLabel = format(date, 'yyyy');
+        }
+        
+        if (!kmByPeriod[periodKey]) {
+          kmByPeriod[periodKey] = {
+            period: periodKey,
+            kilometers: 0,
+            label: periodLabel
+          };
+        }
+        
+        kmByPeriod[periodKey].kilometers += kmDriven;
+      }
+    }
+  });
+
+  const kmData = Object.values(kmByPeriod).sort((a, b) => a.period.localeCompare(b.period));
+
+  // Calculate kilometers by vehicle
+  const kmByVehicle = vehicles.map(vehicle => {
+    const totalKm = vehicleKilometers[vehicle.id] || 0;
+    
+    return {
+      name: vehicle.name,
+      value: totalKm,
+      id: vehicle.id
+    };
+  }).filter(v => v.value > 0);
+
   // Get all unique station names and fuel types
   const stationNames = Array.from(
     new Set(fuelPurchases.map(p => p.stationName))
@@ -54,54 +155,6 @@ const Statistics = () => {
   const fuelTypes = Array.from(
     new Set(fuelPurchases.map(p => p.fuelType))
   ).filter(Boolean).sort();
-
-  // Calculate total kilometers driven
-  const totalKilometers = filteredPurchases.reduce((sum, purchase) => {
-    return sum + (purchase.mileage || 0);
-  }, 0);
-
-  // Calculate kilometers by period
-  const kmByPeriod: Record<string, { period: string, kilometers: number, label: string }> = {};
-  
-  filteredPurchases.forEach(purchase => {
-    if (!purchase.mileage) return;
-    
-    const date = new Date(purchase.date);
-    let periodKey: string;
-    let periodLabel: string;
-    
-    if (kmPeriod === 'month') {
-      periodKey = format(date, 'MM/yyyy');
-      periodLabel = format(date, 'MMM yyyy', { locale: fr });
-    } else {
-      periodKey = format(date, 'yyyy');
-      periodLabel = format(date, 'yyyy');
-    }
-    
-    if (!kmByPeriod[periodKey]) {
-      kmByPeriod[periodKey] = {
-        period: periodKey,
-        kilometers: 0,
-        label: periodLabel
-      };
-    }
-    
-    kmByPeriod[periodKey].kilometers += purchase.mileage;
-  });
-
-  const kmData = Object.values(kmByPeriod).sort((a, b) => a.period.localeCompare(b.period));
-
-  // Calculate kilometers by vehicle
-  const kmByVehicle = vehicles.map(vehicle => {
-    const vehiclePurchases = fuelPurchases.filter(p => p.vehicleId === vehicle.id);
-    const totalKm = vehiclePurchases.reduce((sum, p) => sum + (p.mileage || 0), 0);
-    
-    return {
-      name: vehicle.name,
-      value: totalKm,
-      id: vehicle.id
-    };
-  }).filter(v => v.value > 0);
 
   // Calculate monthly spending (including electric charges)
   const monthlyData: Record<string, { month: string, totalFuel: number, totalElectric: number, total: number, liters: number, kwh: number, label: string }> = {};
@@ -218,7 +271,7 @@ const Statistics = () => {
     .sort((a, b) => b.count - a.count)
     .slice(0, 5);
 
-    // Calculate electric charges statistics
+  // Calculate electric charges statistics
   const electricChargeData = [...filteredElectricCharges]
   .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
   .map(charge => ({
@@ -239,7 +292,7 @@ const Statistics = () => {
     </div>
   );
 
-  console.log('Kilometers data:', { totalKilometers, kmData, kmByVehicle });
+  console.log('Kilometers data:', { totalKilometers, kmData, kmByVehicle, vehicleKilometers });
 
   return (
     <div className="space-y-6 animate-fade-in">
