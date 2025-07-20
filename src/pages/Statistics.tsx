@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useStore } from '@/store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -58,14 +57,14 @@ const Statistics = () => {
 
   // Calculate total kilometers driven
   const totalKilometers = filteredPurchases.reduce((sum, purchase) => {
-    return sum + (purchase.kilometers || 0);
+    return sum + (purchase.mileage || 0);
   }, 0);
 
   // Calculate kilometers by period
   const kmByPeriod: Record<string, { period: string, kilometers: number, label: string }> = {};
   
   filteredPurchases.forEach(purchase => {
-    if (!purchase.kilometers) return;
+    if (!purchase.mileage) return;
     
     const date = new Date(purchase.date);
     let periodKey: string;
@@ -87,7 +86,7 @@ const Statistics = () => {
       };
     }
     
-    kmByPeriod[periodKey].kilometers += purchase.kilometers;
+    kmByPeriod[periodKey].kilometers += purchase.mileage;
   });
 
   const kmData = Object.values(kmByPeriod).sort((a, b) => a.period.localeCompare(b.period));
@@ -95,7 +94,7 @@ const Statistics = () => {
   // Calculate kilometers by vehicle
   const kmByVehicle = vehicles.map(vehicle => {
     const vehiclePurchases = fuelPurchases.filter(p => p.vehicleId === vehicle.id);
-    const totalKm = vehiclePurchases.reduce((sum, p) => sum + (p.kilometers || 0), 0);
+    const totalKm = vehiclePurchases.reduce((sum, p) => sum + (p.mileage || 0), 0);
     
     return {
       name: vehicle.name,
