@@ -8,6 +8,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell } from 'recharts';
 import { format, getMonth, getYear, isWithinInterval, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -22,7 +23,7 @@ const Statistics = () => {
     fetchVehicles, 
     fetchElectricCharges 
   } = useStore();
-  const [selectedVehicle, setSelectedVehicle] = useState<string | 'all'>('all');
+  const [selectedVehicles, setSelectedVehicles] = useState<string[]>([]);
   const [selectedStation, setSelectedStation] = useState<string | 'all'>('all');
   const [selectedFuelType, setSelectedFuelType] = useState<string | 'all'>('all');
   const [selectedMonth, setSelectedMonth] = useState<string | 'all'>('all');
@@ -35,6 +36,30 @@ const Statistics = () => {
     fetchVehicles();
     fetchElectricCharges();
   }, [fetchFuelPurchases, fetchVehicles, fetchElectricCharges]);
+
+  // Initialize with all vehicles selected when vehicles are loaded
+  useEffect(() => {
+    if (vehicles.length > 0 && selectedVehicles.length === 0) {
+      setSelectedVehicles(vehicles.map(v => v.id));
+    }
+  }, [vehicles, selectedVehicles.length]);
+
+  // Handle vehicle selection
+  const handleVehicleToggle = (vehicleId: string) => {
+    setSelectedVehicles(prev => 
+      prev.includes(vehicleId) 
+        ? prev.filter(id => id !== vehicleId)
+        : [...prev, vehicleId]
+    );
+  };
+
+  const handleSelectAllVehicles = () => {
+    setSelectedVehicles(vehicles.map(v => v.id));
+  };
+
+  const handleDeselectAllVehicles = () => {
+    setSelectedVehicles([]);
+  };
 
   // Get available years and months from data
   const availableYears = Array.from(
@@ -84,15 +109,15 @@ const Statistics = () => {
 
   // Apply all filters
   const filteredPurchases = filterByDateRange(
-    selectedVehicle === 'all'
+    selectedVehicles.length === 0
       ? fuelPurchases
-      : fuelPurchases.filter(p => p.vehicleId === selectedVehicle)
+      : fuelPurchases.filter(p => selectedVehicles.includes(p.vehicleId))
   );
 
   const filteredElectricCharges = filterByDateRange(
-    selectedVehicle === 'all'
+    selectedVehicles.length === 0
       ? electricCharges
-      : electricCharges.filter(c => c.vehicleId === selectedVehicle)
+      : electricCharges.filter(c => selectedVehicles.includes(c.vehicleId))
   );
 
   // Get vehicle name by id
@@ -141,26 +166,32 @@ const Statistics = () => {
   const totalKilometers = Object.values(vehicleKilometers).reduce((sum, km) => sum + km, 0);
 
   // Calculate kilometers by vehicle for bar chart
-  const kmByVehicleData = vehicles.map(vehicle => {
-    const totalKm = vehicleKilometers[vehicle.id] || 0;
-    
-    return {
-      name: vehicle.name,
-      kilometers: totalKm,
-      id: vehicle.id
-    };
-  }).filter(v => v.kilometers > 0);
+  const kmByVehicleData = vehicles
+    .filter(vehicle => selectedVehicles.includes(vehicle.id))
+    .map(vehicle => {
+      const totalKm = vehicleKilometers[vehicle.id] || 0;
+      
+      return {
+        name: vehicle.name,
+        kilometers: totalKm,
+        id: vehicle.id
+      };
+    })
+    .filter(v => v.kilometers > 0);
 
   // Calculate kilometers by vehicle for pie chart
-  const kmByVehiclePie = vehicles.map(vehicle => {
-    const totalKm = vehicleKilometers[vehicle.id] || 0;
-    
-    return {
-      name: vehicle.name,
-      value: totalKm,
-      id: vehicle.id
-    };
-  }).filter(v => v.value > 0);
+  const kmByVehiclePie = vehicles
+    .filter(vehicle => selectedVehicles.includes(vehicle.id))
+    .map(vehicle => {
+      const totalKm = vehicleKilometers[vehicle.id] || 0;
+      
+      return {
+        name: vehicle.name,
+        value: totalKm,
+        id: vehicle.id
+      };
+    })
+    .filter(v => v.value > 0);
 
   // Get all unique station names and fuel types
   const stationNames = Array.from(
@@ -243,21 +274,24 @@ const Statistics = () => {
     }));
 
   // Calculate spending by vehicle (including electric charges) - use filtered data for selected period
-  const vehicleSpendingData = vehicles.map(vehicle => {
-    const vehiclePurchases = filteredPurchases.filter(p => p.vehicleId === vehicle.id);
-    const vehicleCharges = filteredElectricCharges.filter(c => c.vehicleId === vehicle.id);
-    const totalFuel = vehiclePurchases.reduce((sum, p) => sum + p.totalPrice, 0);
-    const totalElectric = vehicleCharges.reduce((sum, c) => sum + c.totalPrice, 0);
-    const total = totalFuel + totalElectric;
-    
-    return {
-      name: vehicle.name,
-      value: total,
-      id: vehicle.id,
-      fuelSpent: totalFuel,
-      electricSpent: totalElectric
-    };
-  }).filter(v => v.value > 0);
+  const vehicleSpendingData = vehicles
+    .filter(vehicle => selectedVehicles.includes(vehicle.id))
+    .map(vehicle => {
+      const vehiclePurchases = filteredPurchases.filter(p => p.vehicleId === vehicle.id);
+      const vehicleCharges = filteredElectricCharges.filter(c => c.vehicleId === vehicle.id);
+      const totalFuel = vehiclePurchases.reduce((sum, p) => sum + p.totalPrice, 0);
+      const totalElectric = vehicleCharges.reduce((sum, c) => sum + c.totalPrice, 0);
+      const total = totalFuel + totalElectric;
+      
+      return {
+        name: vehicle.name,
+        value: total,
+        id: vehicle.id,
+        fuelSpent: totalFuel,
+        electricSpent: totalElectric
+      };
+    })
+    .filter(v => v.value > 0);
 
   // Calculate station statistics
   const stationData: Record<string, { name: string, count: number, total: number }> = {};
@@ -314,20 +348,6 @@ const Statistics = () => {
         </div>
         
         <div className="mt-4 md:mt-0 w-full md:w-auto flex flex-wrap gap-2">
-          <Select value={selectedVehicle} onValueChange={setSelectedVehicle}>
-            <SelectTrigger className="w-full md:w-[180px]">
-              <SelectValue placeholder="Tous les véhicules" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tous les véhicules</SelectItem>
-              {vehicles.map((vehicle) => (
-                <SelectItem key={vehicle.id} value={vehicle.id}>
-                  {vehicle.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
           <Select value={selectedYear} onValueChange={setSelectedYear}>
             <SelectTrigger className="w-full md:w-[120px]">
               <SelectValue placeholder="Année" />
@@ -357,6 +377,57 @@ const Statistics = () => {
           </Select>
         </div>
       </div>
+
+      {/* Vehicle Selection */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Sélection des véhicules</CardTitle>
+          <CardDescription>
+            Choisissez les véhicules à comparer dans les statistiques
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <button
+                onClick={handleSelectAllVehicles}
+                className="text-sm text-primary hover:underline"
+              >
+                Tout sélectionner
+              </button>
+              <span className="text-muted-foreground">|</span>
+              <button
+                onClick={handleDeselectAllVehicles}
+                className="text-sm text-primary hover:underline"
+              >
+                Tout désélectionner
+              </button>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {vehicles.map((vehicle) => (
+                <div key={vehicle.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={vehicle.id}
+                    checked={selectedVehicles.includes(vehicle.id)}
+                    onCheckedChange={() => handleVehicleToggle(vehicle.id)}
+                  />
+                  <label
+                    htmlFor={vehicle.id}
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                  >
+                    {vehicle.name}
+                  </label>
+                </div>
+              ))}
+            </div>
+            {selectedVehicles.length > 0 && (
+              <p className="text-sm text-muted-foreground">
+                {selectedVehicles.length} véhicule(s) sélectionné(s)
+              </p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Statistiques rapides */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
@@ -435,9 +506,9 @@ const Statistics = () => {
           <CardHeader>
             <CardTitle>Dépenses Mensuelles</CardTitle>
             <CardDescription>
-              {selectedVehicle === 'all' 
+              {selectedVehicles.length === vehicles.length
                 ? 'Dépenses mensuelles pour tous les véhicules (carburant + électrique)' 
-                : `Dépenses mensuelles pour ${getVehicleName(selectedVehicle)} (carburant + électrique)`}
+                : `Dépenses mensuelles pour les véhicules sélectionnés (carburant + électrique)`}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -503,9 +574,9 @@ const Statistics = () => {
           <CardHeader>
             <CardTitle>Kilomètres par Véhicule</CardTitle>
             <CardDescription>
-              {selectedVehicle === 'all' 
+              {selectedVehicles.length === vehicles.length
                 ? 'Kilomètres parcourus par véhicule'
-                : `Kilomètres parcourus pour ${getVehicleName(selectedVehicle)}`}
+                : `Kilomètres parcourus pour les véhicules sélectionnés`}
             </CardDescription>
           </CardHeader>
           <CardContent>
