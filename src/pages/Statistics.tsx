@@ -9,7 +9,7 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell } from 'recharts';
-import { format, getMonth, getYear } from 'date-fns';
+import { format, getMonth, getYear, isWithinInterval, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Info, MapPin, Zap, Fuel, Gauge } from 'lucide-react';
 
@@ -25,6 +25,8 @@ const Statistics = () => {
   const [selectedVehicle, setSelectedVehicle] = useState<string | 'all'>('all');
   const [selectedStation, setSelectedStation] = useState<string | 'all'>('all');
   const [selectedFuelType, setSelectedFuelType] = useState<string | 'all'>('all');
+  const [selectedMonth, setSelectedMonth] = useState<string | 'all'>('all');
+  const [selectedYear, setSelectedYear] = useState<string | 'all'>('all');
 
   // Fetch data on component mount
   useEffect(() => {
@@ -34,10 +36,64 @@ const Statistics = () => {
     fetchElectricCharges();
   }, [fetchFuelPurchases, fetchVehicles, fetchElectricCharges]);
 
-  // Filter purchases by selected vehicle
-  const filteredPurchases = selectedVehicle === 'all'
-    ? fuelPurchases
-    : fuelPurchases.filter(p => p.vehicleId === selectedVehicle);
+  // Get available years and months from data
+  const availableYears = Array.from(
+    new Set([
+      ...fuelPurchases.map(p => getYear(new Date(p.date))),
+      ...electricCharges.map(c => getYear(new Date(c.date)))
+    ])
+  ).sort((a, b) => b - a);
+
+  const availableMonths = [
+    { value: '0', label: 'Janvier' },
+    { value: '1', label: 'Février' },
+    { value: '2', label: 'Mars' },
+    { value: '3', label: 'Avril' },
+    { value: '4', label: 'Mai' },
+    { value: '5', label: 'Juin' },
+    { value: '6', label: 'Juillet' },
+    { value: '7', label: 'Août' },
+    { value: '8', label: 'Septembre' },
+    { value: '9', label: 'Octobre' },
+    { value: '10', label: 'Novembre' },
+    { value: '11', label: 'Décembre' }
+  ];
+
+  // Filter data by date range
+  const filterByDateRange = (data: any[], dateField: string = 'date') => {
+    if (selectedMonth === 'all' && selectedYear === 'all') return data;
+
+    return data.filter(item => {
+      const itemDate = new Date(item[dateField]);
+      
+      if (selectedYear !== 'all' && selectedMonth !== 'all') {
+        // Filter by specific month and year
+        const monthStart = startOfMonth(new Date(parseInt(selectedYear), parseInt(selectedMonth)));
+        const monthEnd = endOfMonth(new Date(parseInt(selectedYear), parseInt(selectedMonth)));
+        return isWithinInterval(itemDate, { start: monthStart, end: monthEnd });
+      } else if (selectedYear !== 'all') {
+        // Filter by year only
+        const yearStart = startOfYear(new Date(parseInt(selectedYear), 0));
+        const yearEnd = endOfYear(new Date(parseInt(selectedYear), 0));
+        return isWithinInterval(itemDate, { start: yearStart, end: yearEnd });
+      }
+      
+      return true;
+    });
+  };
+
+  // Apply all filters
+  const filteredPurchases = filterByDateRange(
+    selectedVehicle === 'all'
+      ? fuelPurchases
+      : fuelPurchases.filter(p => p.vehicleId === selectedVehicle)
+  );
+
+  const filteredElectricCharges = filterByDateRange(
+    selectedVehicle === 'all'
+      ? electricCharges
+      : electricCharges.filter(c => c.vehicleId === selectedVehicle)
+  );
 
   // Get vehicle name by id
   const getVehicleName = (id: string) => {
@@ -141,11 +197,7 @@ const Statistics = () => {
     monthlyData[monthYear].liters += purchase.quantity;
   });
 
-  // Add electric charges (filter by vehicle if selected)
-  const filteredElectricCharges = selectedVehicle === 'all'
-    ? electricCharges
-    : electricCharges.filter(c => c.vehicleId === selectedVehicle);
-
+  // Add electric charges
   filteredElectricCharges.forEach(charge => {
     const date = new Date(charge.date);
     const monthYear = format(date, 'MM/yyyy');
@@ -190,10 +242,10 @@ const Statistics = () => {
       unit: '€/L'
     }));
 
-  // Calculate spending by vehicle (including electric charges)
+  // Calculate spending by vehicle (including electric charges) - use filtered data for selected period
   const vehicleSpendingData = vehicles.map(vehicle => {
-    const vehiclePurchases = fuelPurchases.filter(p => p.vehicleId === vehicle.id);
-    const vehicleCharges = electricCharges.filter(c => c.vehicleId === vehicle.id);
+    const vehiclePurchases = filteredPurchases.filter(p => p.vehicleId === vehicle.id);
+    const vehicleCharges = filteredElectricCharges.filter(c => c.vehicleId === vehicle.id);
     const totalFuel = vehiclePurchases.reduce((sum, p) => sum + p.totalPrice, 0);
     const totalElectric = vehicleCharges.reduce((sum, c) => sum + c.totalPrice, 0);
     const total = totalFuel + totalElectric;
@@ -261,9 +313,9 @@ const Statistics = () => {
           <p className="text-muted-foreground">Visualisez vos dépenses en carburant et électrique</p>
         </div>
         
-        <div className="mt-4 md:mt-0 w-full md:w-auto">
+        <div className="mt-4 md:mt-0 w-full md:w-auto flex flex-wrap gap-2">
           <Select value={selectedVehicle} onValueChange={setSelectedVehicle}>
-            <SelectTrigger className="w-full md:w-[200px]">
+            <SelectTrigger className="w-full md:w-[180px]">
               <SelectValue placeholder="Tous les véhicules" />
             </SelectTrigger>
             <SelectContent>
@@ -271,6 +323,34 @@ const Statistics = () => {
               {vehicles.map((vehicle) => (
                 <SelectItem key={vehicle.id} value={vehicle.id}>
                   {vehicle.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={selectedYear} onValueChange={setSelectedYear}>
+            <SelectTrigger className="w-full md:w-[120px]">
+              <SelectValue placeholder="Année" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Toutes</SelectItem>
+              {availableYears.map((year) => (
+                <SelectItem key={year} value={year.toString()}>
+                  {year}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+            <SelectTrigger className="w-full md:w-[140px]">
+              <SelectValue placeholder="Mois" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous</SelectItem>
+              {availableMonths.map((month) => (
+                <SelectItem key={month.value} value={month.value}>
+                  {month.label}
                 </SelectItem>
               ))}
             </SelectContent>
