@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useStore } from '@/store';
@@ -6,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Calendar as CalendarIcon, Car, Zap } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { ArrowLeft, Calendar as CalendarIcon, Car, Zap, Info } from 'lucide-react';
 import { 
   Select, 
   SelectContent, 
@@ -77,23 +79,25 @@ const EditElectricCharge = () => {
     }
   }, [id, electricCharges, navigate, toast]);
 
-  // Calculate total price when energy amount or price per kWh changes
-  useEffect(() => {
+  // Update total price when energy amount or price per kWh changes
+  const updateTotalPrice = () => {
     const energy = parseFloat(energyAmount);
     const price = parseFloat(pricePerKwh);
-    if (!isNaN(energy) && !isNaN(price) && energy > 0 && price > 0) {
+    
+    if (!isNaN(energy) && !isNaN(price)) {
       setTotalPrice((energy * price).toFixed(2));
     }
-  }, [energyAmount, pricePerKwh]);
-
-  // Update energy amount when total price and price per kWh change
-  useEffect(() => {
+  };
+  
+  // Update price per kWh when total price or energy amount changes
+  const updatePricePerKwh = () => {
+    const energy = parseFloat(energyAmount);
     const total = parseFloat(totalPrice);
-    const price = parseFloat(pricePerKwh);
-    if (!isNaN(total) && !isNaN(price) && total > 0 && price > 0) {
-      setEnergyAmount((total / price).toFixed(2));
+    
+    if (!isNaN(energy) && !isNaN(total) && energy > 0) {
+      setPricePerKwh((total / energy).toFixed(3));
     }
-  }, [totalPrice, pricePerKwh]);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -167,21 +171,16 @@ const EditElectricCharge = () => {
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Zap className="h-5 w-5" />
-            Informations de la Recharge
-          </CardTitle>
-          <CardDescription>
-            Modifiez les détails de votre recharge électrique
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <form onSubmit={handleSubmit}>
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Informations Générales</CardTitle>
+              <CardDescription>Détails de base sur votre recharge</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="date">Date de la recharge *</Label>
+                <Label htmlFor="date">Date de la recharge</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
@@ -207,7 +206,7 @@ const EditElectricCharge = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="vehicle">Véhicule *</Label>
+                <Label htmlFor="vehicle">Véhicule</Label>
                 <Select value={vehicleId} onValueChange={setVehicleId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Sélectionner un véhicule" />
@@ -226,7 +225,7 @@ const EditElectricCharge = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="stationName">Nom de la station *</Label>
+                <Label htmlFor="stationName">Nom de la station</Label>
                 <Input
                   id="stationName"
                   type="text"
@@ -236,99 +235,130 @@ const EditElectricCharge = () => {
                 />
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="batteryLevelStart">Batterie début (%)</Label>
+                  <Input
+                    id="batteryLevelStart"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    placeholder="Ex: 20"
+                    value={batteryLevelStart}
+                    onChange={(e) => setBatteryLevelStart(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="batteryLevelEnd">Batterie fin (%)</Label>
+                  <Input
+                    id="batteryLevelEnd"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    placeholder="Ex: 80"
+                    value={batteryLevelEnd}
+                    onChange={(e) => setBatteryLevelEnd(e.target.value)}
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
-                <Label htmlFor="energyAmount">Énergie rechargée (kWh) *</Label>
+                <Label htmlFor="notes">Notes (optionnel)</Label>
+                <Textarea
+                  id="notes"
+                  placeholder="Notes additionnelles..."
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={3}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Détails de la Recharge</CardTitle>
+              <CardDescription>Informations sur l'énergie et le prix</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="energyAmount">Énergie rechargée (kWh)</Label>
                 <Input
                   id="energyAmount"
-                  type="number"
-                  step="0.01"
-                  min="0"
+                  inputMode="decimal"
                   placeholder="Ex: 45.5"
                   value={energyAmount}
-                  onChange={(e) => setEnergyAmount(e.target.value)}
+                  onChange={(e) => {
+                    setEnergyAmount(e.target.value);
+                    if (e.target.value && pricePerKwh) {
+                      updateTotalPrice();
+                    }
+                  }}
+                  onBlur={updateTotalPrice}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="pricePerKwh">Prix par kWh (€) *</Label>
+                <Label htmlFor="pricePerKwh">Prix par kWh (€) 0.1555€ HC et 0.224€ HP</Label>
                 <Input
                   id="pricePerKwh"
-                  type="number"
-                  step="0.001"
-                  min="0"
+                  inputMode="decimal"
                   placeholder="Ex: 0.35"
                   value={pricePerKwh}
-                  onChange={(e) => setPricePerKwh(e.target.value)}
+                  onChange={(e) => {
+                    setPricePerKwh(e.target.value);
+                    if (e.target.value && energyAmount) {
+                      updateTotalPrice();
+                    }
+                  }}
+                  onBlur={updateTotalPrice}
                 />
               </div>
 
+              <Separator />
+
               <div className="space-y-2">
-                <Label htmlFor="totalPrice">Prix total (€) *</Label>
+                <Label htmlFor="totalPrice">Prix total (€)</Label>
                 <Input
                   id="totalPrice"
-                  type="number"
-                  step="0.01"
-                  min="0"
+                  inputMode="decimal"
                   placeholder="Ex: 15.93"
                   value={totalPrice}
-                  onChange={(e) => setTotalPrice(e.target.value)}
+                  onChange={(e) => {
+                    setTotalPrice(e.target.value);
+                    if (e.target.value && energyAmount) {
+                      updatePricePerKwh();
+                    }
+                  }}
+                  onBlur={updatePricePerKwh}
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="batteryLevelStart">Niveau batterie début (%)</Label>
-                <Input
-                  id="batteryLevelStart"
-                  type="number"
-                  min="0"
-                  max="100"
-                  placeholder="Ex: 20"
-                  value={batteryLevelStart}
-                  onChange={(e) => setBatteryLevelStart(e.target.value)}
-                />
+              <div className="rounded-md bg-muted p-4 text-sm flex items-start">
+                <Info className="h-4 w-4 mr-2 mt-0.5 text-muted-foreground" />
+                <p className="text-muted-foreground">
+                  Vous pouvez saisir deux valeurs parmi : énergie, prix par kWh et prix total. 
+                  La troisième sera calculée automatiquement lorsque vous quittez le champ.
+                </p>
               </div>
+            </CardContent>
+          </Card>
+        </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="batteryLevelEnd">Niveau batterie fin (%)</Label>
-                <Input
-                  id="batteryLevelEnd"
-                  type="number"
-                  min="0"
-                  max="100"
-                  placeholder="Ex: 80"
-                  value={batteryLevelEnd}
-                  onChange={(e) => setBatteryLevelEnd(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes (optionnel)</Label>
-              <Textarea
-                id="notes"
-                placeholder="Notes additionnelles..."
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={3}
-              />
-            </div>
-
-            <div className="flex gap-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate('/purchases')}
-                disabled={isLoading}
-              >
-                Annuler
-              </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? 'Modification...' : 'Modifier la Recharge'}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+        <div className="mt-6 flex items-center justify-end gap-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => navigate('/purchases')}
+            disabled={isLoading}
+          >
+            Annuler
+          </Button>
+          <Button type="submit" disabled={isLoading}>
+            <Zap className="mr-2 h-4 w-4" />
+            {isLoading ? 'Modification...' : 'Modifier la Recharge'}
+          </Button>
+        </div>
+      </form>
     </div>
   );
 };
