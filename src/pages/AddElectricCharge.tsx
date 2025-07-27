@@ -302,7 +302,7 @@ const AddElectricCharge = () => {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="price">Prix par kWh (€)</Label>
+                <Label htmlFor="price">Prix par kWh (€) 0.1555€ HC et 0.224€ HP</Label>
                 <Input
                   id="price"
                   type="number"
