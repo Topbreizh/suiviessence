@@ -78,10 +78,15 @@ const EditElectricCharge = () => {
     }
   }, [id, electricCharges, navigate, toast]);
 
+  // Helper function to normalize decimal input (handle both comma and dot)
+  const normalizeDecimal = (value: string) => {
+    return value.replace(',', '.');
+  };
+
   // Update total price when energy amount or price per kWh changes
   const updateTotalPrice = () => {
-    const energy = parseFloat(energyAmount);
-    const price = parseFloat(pricePerKwh);
+    const energy = parseFloat(normalizeDecimal(energyAmount));
+    const price = parseFloat(normalizeDecimal(pricePerKwh));
     
     if (!isNaN(energy) && !isNaN(price)) {
       setTotalPrice((energy * price).toFixed(2));
@@ -90,8 +95,8 @@ const EditElectricCharge = () => {
   
   // Update price per kWh when total price or energy amount changes
   const updatePricePerKwh = () => {
-    const energy = parseFloat(energyAmount);
-    const total = parseFloat(totalPrice);
+    const energy = parseFloat(normalizeDecimal(energyAmount));
+    const total = parseFloat(normalizeDecimal(totalPrice));
     
     if (!isNaN(energy) && !isNaN(total) && energy > 0) {
       setPricePerKwh((total / energy).toFixed(3));
@@ -118,9 +123,9 @@ const EditElectricCharge = () => {
         date,
         vehicleId,
         stationName,
-        energyAmount: parseFloat(energyAmount),
-        pricePerKwh: parseFloat(pricePerKwh),
-        totalPrice: parseFloat(totalPrice),
+        energyAmount: parseFloat(normalizeDecimal(energyAmount)),
+        pricePerKwh: parseFloat(normalizeDecimal(pricePerKwh)),
+        totalPrice: parseFloat(normalizeDecimal(totalPrice)),
         ...(batteryLevelStart && { batteryLevelStart: parseInt(batteryLevelStart) }),
         ...(batteryLevelEnd && { batteryLevelEnd: parseInt(batteryLevelEnd) }),
         ...(notes && { notes }),
