@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useStore } from '@/store';
@@ -289,11 +288,12 @@ const EditElectricCharge = () => {
                   value={energyAmount}
                   onChange={(e) => {
                     setEnergyAmount(e.target.value);
-                    if (e.target.value && pricePerKwh) {
+                  }}
+                  onBlur={() => {
+                    if (energyAmount && pricePerKwh) {
                       updateTotalPrice();
                     }
                   }}
-                  onBlur={updateTotalPrice}
                 />
               </div>
 
@@ -306,11 +306,12 @@ const EditElectricCharge = () => {
                   value={pricePerKwh}
                   onChange={(e) => {
                     setPricePerKwh(e.target.value);
-                    if (e.target.value && energyAmount) {
+                  }}
+                  onBlur={() => {
+                    if (pricePerKwh && energyAmount) {
                       updateTotalPrice();
                     }
                   }}
-                  onBlur={updateTotalPrice}
                 />
               </div>
 
@@ -325,11 +326,12 @@ const EditElectricCharge = () => {
                   value={totalPrice}
                   onChange={(e) => {
                     setTotalPrice(e.target.value);
-                    if (e.target.value && energyAmount) {
+                  }}
+                  onBlur={() => {
+                    if (totalPrice && energyAmount) {
                       updatePricePerKwh();
                     }
                   }}
-                  onBlur={updatePricePerKwh}
                 />
               </div>
 
