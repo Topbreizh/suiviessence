@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '@/store';
@@ -213,10 +214,10 @@ const Dashboard = () => {
             <Card className="h-full">
               <CardHeader className="pb-2">
                 <CardTitle>Dépenses par Mois</CardTitle>
-                <CardDescription>Total des dépenses par mois</CardDescription>
+                <CardDescription>Total des dépenses par mois (carburant + électrique)</CardDescription>
               </CardHeader>
               <CardContent className="h-80">
-                <SpendingOverview purchases={fuelPurchases} />
+                <SpendingOverview purchases={fuelPurchases} electricCharges={electricCharges} />
               </CardContent>
             </Card>
           </div>
