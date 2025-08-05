@@ -10,6 +10,7 @@ import Dashboard from "@/pages/Dashboard";
 import Purchases from "@/pages/Purchases";
 import Vehicles from "@/pages/Vehicles";
 import Statistics from "@/pages/Statistics";
+import ElectricStatistics from "@/pages/ElectricStatistics";
 import AddPurchase from "@/pages/AddPurchase";
 import AddVehicle from "@/pages/AddVehicle";
 import EditVehicle from "@/pages/EditVehicle";
@@ -40,6 +41,7 @@ const App = () => (
               <Route path="vehicles/add" element={<AddVehicle />} />
               <Route path="vehicles/edit/:id" element={<EditVehicle />} />
               <Route path="statistics" element={<Statistics />} />
+              <Route path="electric-statistics" element={<ElectricStatistics />} />
               <Route path="stations" element={<GasStations />} />
               <Route path="charging-stations" element={<ChargingStations />} />
               <Route path="electric-charge/add" element={<AddElectricCharge />} />

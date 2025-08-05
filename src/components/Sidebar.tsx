@@ -84,6 +84,13 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
               icon={<BarChart3 className="mr-2 h-5 w-5" />}
               label="Statistiques"
             />
+            <NavItem
+              to="/electric-statistics"
+              active={location.pathname === "/electric-statistics"}
+              icon={<Zap className="mr-2 h-5 w-5" />}
+              label="Stat. Électrique"
+              indent
+            />
           </div>
         </ScrollArea>
       </nav>
@@ -165,6 +172,14 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
                 icon={<BarChart3 className="mr-2 h-5 w-5" />}
                 label="Statistiques"
                 onClick={() => setOpen(false)}
+              />
+              <NavItem
+                to="/electric-statistics"
+                active={location.pathname === "/electric-statistics"}
+                icon={<Zap className="mr-2 h-5 w-5" />}
+                label="Stat. Électrique"
+                onClick={() => setOpen(false)}
+                indent
               />
             </div>
           </ScrollArea>
