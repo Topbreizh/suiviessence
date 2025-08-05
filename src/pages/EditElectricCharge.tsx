@@ -107,7 +107,7 @@ const EditElectricCharge = () => {
     e.preventDefault();
     if (!id) return;
 
-    if (!vehicleId || !stationName || !energyAmount || !pricePerKwh || !totalPrice) {
+    if (!vehicleId || !stationName || !energyAmount || pricePerKwh === '' || !totalPrice) {
       toast({
         title: "Erreur de validation",
         description: "Veuillez remplir tous les champs obligatoires",

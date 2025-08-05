@@ -92,10 +92,10 @@ const AddElectricCharge = () => {
       return;
     }
     
-    if (isNaN(priceValue) || priceValue <= 0) {
+    if (isNaN(priceValue) || priceValue < 0) {
       toast({
         title: "Prix invalide",
-        description: "Veuillez entrer un prix par kWh valide",
+        description: "Veuillez entrer un prix par kWh valide (0 pour gratuit)",
         variant: "destructive",
       });
       return;
