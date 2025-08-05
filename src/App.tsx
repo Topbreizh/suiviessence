@@ -19,6 +19,7 @@ import GasStations from "@/pages/GasStations";
 import ChargingStations from "@/pages/ChargingStations";
 import AddElectricCharge from "@/pages/AddElectricCharge";
 import EditElectricCharge from "@/pages/EditElectricCharge";
+import CostCalculator from "@/pages/CostCalculator";
 import NotFound from "@/pages/NotFound";
 import "./index.css";
 
@@ -46,6 +47,7 @@ const App = () => (
               <Route path="charging-stations" element={<ChargingStations />} />
               <Route path="electric-charge/add" element={<AddElectricCharge />} />
               <Route path="electric-charge/edit/:id" element={<EditElectricCharge />} />
+              <Route path="cost-calculator" element={<CostCalculator />} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>

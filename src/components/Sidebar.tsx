@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { Fuel, Car, BarChart3, LayoutDashboard, PlusCircle, MapPin, Zap } from "lucide-react";
+import { Fuel, Car, BarChart3, LayoutDashboard, PlusCircle, MapPin, Zap, Calculator } from "lucide-react";
 
 interface SidebarProps {
   open: boolean;
@@ -90,6 +90,12 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
               icon={<Zap className="mr-2 h-5 w-5" />}
               label="Stat. Électrique"
               indent
+            />
+            <NavItem
+              to="/cost-calculator"
+              active={location.pathname === "/cost-calculator"}
+              icon={<Calculator className="mr-2 h-5 w-5" />}
+              label="Calculateur Coût"
             />
           </div>
         </ScrollArea>
@@ -180,6 +186,13 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
                 label="Stat. Électrique"
                 onClick={() => setOpen(false)}
                 indent
+              />
+              <NavItem
+                to="/cost-calculator"
+                active={location.pathname === "/cost-calculator"}
+                icon={<Calculator className="mr-2 h-5 w-5" />}
+                label="Calculateur Coût"
+                onClick={() => setOpen(false)}
               />
             </div>
           </ScrollArea>
