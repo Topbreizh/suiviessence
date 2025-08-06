@@ -21,6 +21,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { PaymentMethod } from '@/types';
 
 const EditElectricCharge = () => {
   const { id } = useParams<{ id: string }>();
@@ -44,6 +45,10 @@ const EditElectricCharge = () => {
   const [totalPrice, setTotalPrice] = useState('');
   const [batteryLevelStart, setBatteryLevelStart] = useState('');
   const [batteryLevelEnd, setBatteryLevelEnd] = useState('');
+  const [mileage, setMileage] = useState('');
+  const [chargingPower, setChargingPower] = useState('');
+  const [chargingDuration, setChargingDuration] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
   const [notes, setNotes] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -64,6 +69,10 @@ const EditElectricCharge = () => {
         setEnergyAmount(charge.energyAmount.toString());
         setPricePerKwh(charge.pricePerKwh.toString());
         setTotalPrice(charge.totalPrice.toString());
+        setMileage(charge.mileage.toString());
+        setChargingPower(charge.chargingPower?.toString() || '');
+        setChargingDuration(charge.chargingDuration?.toString() || '');
+        setPaymentMethod(charge.paymentMethod);
         setBatteryLevelStart(charge.batteryLevelStart?.toString() || '');
         setBatteryLevelEnd(charge.batteryLevelEnd?.toString() || '');
         setNotes(charge.notes || '');
@@ -107,7 +116,7 @@ const EditElectricCharge = () => {
     e.preventDefault();
     if (!id) return;
 
-    if (!vehicleId || !stationName || !energyAmount || pricePerKwh === '' || !totalPrice) {
+    if (!vehicleId || !stationName || !energyAmount || pricePerKwh === '' || !totalPrice || !mileage) {
       toast({
         title: "Erreur de validation",
         description: "Veuillez remplir tous les champs obligatoires",
@@ -126,6 +135,10 @@ const EditElectricCharge = () => {
         energyAmount: parseFloat(normalizeDecimal(energyAmount)),
         pricePerKwh: parseFloat(normalizeDecimal(pricePerKwh)),
         totalPrice: parseFloat(normalizeDecimal(totalPrice)),
+        mileage: parseFloat(normalizeDecimal(mileage)),
+        paymentMethod,
+        ...(chargingPower && { chargingPower: parseFloat(normalizeDecimal(chargingPower)) }),
+        ...(chargingDuration && { chargingDuration: parseFloat(normalizeDecimal(chargingDuration)) }),
         ...(batteryLevelStart && { batteryLevelStart: parseInt(batteryLevelStart) }),
         ...(batteryLevelEnd && { batteryLevelEnd: parseInt(batteryLevelEnd) }),
         ...(notes && { notes }),
@@ -237,6 +250,59 @@ const EditElectricCharge = () => {
                   value={stationName}
                   onChange={(e) => setStationName(e.target.value)}
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="mileage">Kilométrage</Label>
+                <Input
+                  id="mileage"
+                  inputMode="numeric"
+                  placeholder="Kilométrage actuel"
+                  value={mileage}
+                  onChange={(e) => setMileage(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="payment">Moyen de paiement</Label>
+                <Select 
+                  value={paymentMethod} 
+                  onValueChange={(value) => setPaymentMethod(value as PaymentMethod)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner un moyen de paiement" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="card">Carte bancaire</SelectItem>
+                    <SelectItem value="cash">Espèces</SelectItem>
+                    <SelectItem value="app">Application mobile</SelectItem>
+                    <SelectItem value="other">Autre</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="chargingPower">Puissance (kW)</Label>
+                  <Input
+                    id="chargingPower"
+                    inputMode="decimal"
+                    placeholder="Puissance de charge"
+                    value={chargingPower}
+                    onChange={(e) => setChargingPower(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="chargingDuration">Durée (min)</Label>
+                  <Input
+                    id="chargingDuration"
+                    inputMode="decimal"
+                    placeholder="Durée de charge"
+                    value={chargingDuration}
+                    onChange={(e) => setChargingDuration(e.target.value)}
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
