@@ -37,6 +37,8 @@ const AddElectricCharge = () => {
   const [chargingDuration, setChargingDuration] = useState('');
   const [batteryLevelStart, setBatteryLevelStart] = useState('');
   const [batteryLevelEnd, setBatteryLevelEnd] = useState('');
+  const [odometerBefore, setOdometerBefore] = useState('');
+  const [odometerAfter, setOdometerAfter] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -151,6 +153,8 @@ const AddElectricCharge = () => {
         chargingDuration: chargingDuration ? parseFloat(chargingDuration) : undefined,
         batteryLevelStart: batteryLevelStart ? parseFloat(batteryLevelStart) : undefined,
         batteryLevelEnd: batteryLevelEnd ? parseFloat(batteryLevelEnd) : undefined,
+        odometerBefore: odometerBefore ? parseFloat(odometerBefore) : undefined,
+        odometerAfter: odometerAfter ? parseFloat(odometerAfter) : undefined,
         notes: notes.trim(),
       });
       
@@ -387,6 +391,30 @@ const AddElectricCharge = () => {
                     placeholder="% à la fin"
                     value={batteryLevelEnd}
                     onChange={(e) => setBatteryLevelEnd(e.target.value)}
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="odometerBefore">Compteur avant (km)</Label>
+                  <Input
+                    id="odometerBefore"
+                    type="number"
+                    placeholder="Kilométrage avant charge"
+                    value={odometerBefore}
+                    onChange={(e) => setOdometerBefore(e.target.value)}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="odometerAfter">Compteur après (km)</Label>
+                  <Input
+                    id="odometerAfter"
+                    type="number"
+                    placeholder="Kilométrage après charge"
+                    value={odometerAfter}
+                    onChange={(e) => setOdometerAfter(e.target.value)}
                   />
                 </div>
               </div>
