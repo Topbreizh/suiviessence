@@ -120,7 +120,7 @@ const EditElectricCharge = () => {
     
     if (!isNaN(before) && !isNaN(after) && !isNaN(energy) && after > before && energy > 0) {
       const distance = after - before;
-      return (energy / distance * 100).toFixed(1); // kWh/100km
+      return (energy / distance * 100).toFixed(2); // kWh/100km
     }
     return null;
   };
@@ -296,26 +296,26 @@ const EditElectricCharge = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="odometerBefore">Compteur avant charge (km)</Label>
+                  <Label htmlFor="odometerBefore">Compteur avant charge (kWh)</Label>
                   <Input
                     id="odometerBefore"
                     inputMode="numeric"
-                    placeholder="Ex: 12500"
+                    placeholder="Ex: 125.5"
                     value={odometerBefore}
                     onChange={(e) => setOdometerBefore(e.target.value)}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="odometerAfter">Compteur après charge (km)</Label>
+                  <Label htmlFor="odometerAfter">Compteur après charge (kWh)</Label>
                   <Input
                     id="odometerAfter"
                     inputMode="numeric"
-                    placeholder="Ex: 12500"
+                    placeholder="Ex: 175.5"
                     value={odometerAfter}
                     onChange={(e) => setOdometerAfter(e.target.value)}
                   />
-              </div>
+                </div>
 
               {calculateConsumption() && (
                 <div className="rounded-md bg-blue-50 border border-blue-200 p-4">
@@ -326,7 +326,7 @@ const EditElectricCharge = () => {
                     </span>
                   </div>
                   <p className="text-xs text-blue-700 mt-1">
-                    Distance parcourue: {(parseFloat(odometerAfter) - parseFloat(odometerBefore))} km
+                    Énergie consommée: {(parseFloat(odometerAfter) - parseFloat(odometerBefore)).toFixed(2)} kWh
                   </p>
                 </div>
               )}
