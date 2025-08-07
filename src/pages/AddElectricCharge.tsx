@@ -33,8 +33,6 @@ const AddElectricCharge = () => {
   const [totalPrice, setTotalPrice] = useState('');
   const [stationName, setStationName] = useState('');
   const [mileage, setMileage] = useState('');
-  const [chargingPower, setChargingPower] = useState('');
-  const [chargingDuration, setChargingDuration] = useState('');
   const [batteryLevelStart, setBatteryLevelStart] = useState('');
   const [batteryLevelEnd, setBatteryLevelEnd] = useState('');
   const [odometerBefore, setOdometerBefore] = useState('');
@@ -149,8 +147,6 @@ const AddElectricCharge = () => {
         },
         mileage: mileageValue,
         paymentMethod,
-        chargingPower: chargingPower ? parseFloat(chargingPower) : undefined,
-        chargingDuration: chargingDuration ? parseFloat(chargingDuration) : undefined,
         batteryLevelStart: batteryLevelStart ? parseFloat(batteryLevelStart) : undefined,
         batteryLevelEnd: batteryLevelEnd ? parseFloat(batteryLevelEnd) : undefined,
         odometerBefore: odometerBefore ? parseFloat(odometerBefore) : undefined,
@@ -343,29 +339,6 @@ const AddElectricCharge = () => {
                 />
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="power">Puissance (kW)</Label>
-                  <Input
-                    id="power"
-                    type="number"
-                    placeholder="Puissance de charge"
-                    value={chargingPower}
-                    onChange={(e) => setChargingPower(e.target.value)}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="duration">Durée (min)</Label>
-                  <Input
-                    id="duration"
-                    type="number"
-                    placeholder="Durée de charge"
-                    value={chargingDuration}
-                    onChange={(e) => setChargingDuration(e.target.value)}
-                  />
-                </div>
-              </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
