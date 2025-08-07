@@ -397,22 +397,22 @@ const AddElectricCharge = () => {
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="odometerBefore">Compteur avant (km)</Label>
+                  <Label htmlFor="odometerBefore">Compteur avant (kwh)</Label>
                   <Input
                     id="odometerBefore"
                     type="number"
-                    placeholder="Kilométrage avant charge"
+                    placeholder="KWH avant charge"
                     value={odometerBefore}
                     onChange={(e) => setOdometerBefore(e.target.value)}
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="odometerAfter">Compteur après (km)</Label>
+                  <Label htmlFor="odometerAfter">Compteur après (kwh)</Label>
                   <Input
                     id="odometerAfter"
                     type="number"
-                    placeholder="Kilométrage après charge"
+                    placeholder="KWH après charge"
                     value={odometerAfter}
                     onChange={(e) => setOdometerAfter(e.target.value)}
                   />
