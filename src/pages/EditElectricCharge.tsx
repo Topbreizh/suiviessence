@@ -112,6 +112,19 @@ const EditElectricCharge = () => {
     }
   };
 
+  // Calculate consumption based on odometer difference and energy
+  const calculateConsumption = () => {
+    const before = parseFloat(odometerBefore);
+    const after = parseFloat(odometerAfter);
+    const energy = parseFloat(energyAmount);
+    
+    if (!isNaN(before) && !isNaN(after) && !isNaN(energy) && after > before && energy > 0) {
+      const distance = after - before;
+      return (energy / distance * 100).toFixed(1); // kWh/100km
+    }
+    return null;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!id) return;
@@ -302,7 +315,21 @@ const EditElectricCharge = () => {
                     value={odometerAfter}
                     onChange={(e) => setOdometerAfter(e.target.value)}
                   />
+              </div>
+
+              {calculateConsumption() && (
+                <div className="rounded-md bg-blue-50 border border-blue-200 p-4">
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm font-medium text-blue-900">
+                      Consommation calculée: {calculateConsumption()} kWh/100km
+                    </span>
+                  </div>
+                  <p className="text-xs text-blue-700 mt-1">
+                    Distance parcourue: {(parseFloat(odometerAfter) - parseFloat(odometerBefore))} km
+                  </p>
                 </div>
+              )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
