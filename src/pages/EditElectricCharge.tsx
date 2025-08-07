@@ -46,8 +46,8 @@ const EditElectricCharge = () => {
   const [batteryLevelStart, setBatteryLevelStart] = useState('');
   const [batteryLevelEnd, setBatteryLevelEnd] = useState('');
   const [mileage, setMileage] = useState('');
-  const [chargingPower, setChargingPower] = useState('');
-  const [chargingDuration, setChargingDuration] = useState('');
+  const [odometerBefore, setOdometerBefore] = useState('');
+  const [odometerAfter, setOdometerAfter] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
   const [notes, setNotes] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -70,8 +70,8 @@ const EditElectricCharge = () => {
         setPricePerKwh(charge.pricePerKwh.toString());
         setTotalPrice(charge.totalPrice.toString());
         setMileage(charge.mileage.toString());
-        setChargingPower(charge.chargingPower?.toString() || '');
-        setChargingDuration(charge.chargingDuration?.toString() || '');
+        setOdometerBefore(charge.odometerBefore?.toString() || '');
+        setOdometerAfter(charge.odometerAfter?.toString() || '');
         setPaymentMethod(charge.paymentMethod);
         setBatteryLevelStart(charge.batteryLevelStart?.toString() || '');
         setBatteryLevelEnd(charge.batteryLevelEnd?.toString() || '');
@@ -137,8 +137,8 @@ const EditElectricCharge = () => {
         totalPrice: parseFloat(normalizeDecimal(totalPrice)),
         mileage: parseFloat(normalizeDecimal(mileage)),
         paymentMethod,
-        ...(chargingPower && { chargingPower: parseFloat(normalizeDecimal(chargingPower)) }),
-        ...(chargingDuration && { chargingDuration: parseFloat(normalizeDecimal(chargingDuration)) }),
+        ...(odometerBefore && { odometerBefore: parseFloat(normalizeDecimal(odometerBefore)) }),
+        ...(odometerAfter && { odometerAfter: parseFloat(normalizeDecimal(odometerAfter)) }),
         ...(batteryLevelStart && { batteryLevelStart: parseInt(batteryLevelStart) }),
         ...(batteryLevelEnd && { batteryLevelEnd: parseInt(batteryLevelEnd) }),
         ...(notes && { notes }),
@@ -283,24 +283,24 @@ const EditElectricCharge = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="chargingPower">Puissance (kW)</Label>
+                  <Label htmlFor="odometerBefore">Compteur avant charge (km)</Label>
                   <Input
-                    id="chargingPower"
-                    inputMode="decimal"
-                    placeholder="Puissance de charge"
-                    value={chargingPower}
-                    onChange={(e) => setChargingPower(e.target.value)}
+                    id="odometerBefore"
+                    inputMode="numeric"
+                    placeholder="Ex: 12500"
+                    value={odometerBefore}
+                    onChange={(e) => setOdometerBefore(e.target.value)}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="chargingDuration">Durée (min)</Label>
+                  <Label htmlFor="odometerAfter">Compteur après charge (km)</Label>
                   <Input
-                    id="chargingDuration"
-                    inputMode="decimal"
-                    placeholder="Durée de charge"
-                    value={chargingDuration}
-                    onChange={(e) => setChargingDuration(e.target.value)}
+                    id="odometerAfter"
+                    inputMode="numeric"
+                    placeholder="Ex: 12500"
+                    value={odometerAfter}
+                    onChange={(e) => setOdometerAfter(e.target.value)}
                   />
                 </div>
               </div>
