@@ -406,7 +406,7 @@ const AddElectricCharge = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="odometerAfter">Compteur après charge (kWh)</Label>
+                  <Label htmlFor="odometerAfter">Compteur après charge (kWh) — optionnel</Label>
                   <Input
                     id="odometerAfter"
                     type="number"
@@ -415,6 +415,7 @@ const AddElectricCharge = () => {
                     value={odometerAfter}
                     onChange={(e) => setOdometerAfter(e.target.value)}
                   />
+                  <p className="text-xs text-muted-foreground">Vous pourrez le saisir plus tard.</p>
                 </div>
               </div>
 
