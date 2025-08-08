@@ -35,67 +35,33 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
             />
             <NavItem
               to="/purchases"
-              active={location.pathname.includes("/purchases") && !location.pathname.includes("/add")}
+              active={location.pathname.includes("/purchases")}
               icon={<Fuel className="mr-2 h-5 w-5" />}
-              label="Achats Carburant"
-            />
-            <NavItem
-              to="/purchases/add"
-              active={location.pathname === "/purchases/add"}
-              icon={<PlusCircle className="mr-2 h-5 w-5" />}
-              label="Nouvel Achat"
-              indent
+              label="Achats"
             />
             <NavItem
               to="/vehicles"
-              active={location.pathname.includes("/vehicles") && !location.pathname.includes("/add")}
+              active={location.pathname.includes("/vehicles")}
               icon={<Car className="mr-2 h-5 w-5" />}
               label="Véhicules"
             />
             <NavItem
-              to="/vehicles/add"
-              active={location.pathname === "/vehicles/add"}
-              icon={<PlusCircle className="mr-2 h-5 w-5" />}
-              label="Nouveau Véhicule"
-              indent
-            />
-            <NavItem
               to="/stations"
-              active={location.pathname === "/stations"}
+              active={location.pathname === "/stations" || location.pathname === "/charging-stations"}
               icon={<MapPin className="mr-2 h-5 w-5" />}
-              label="Stations-service"
-            />
-            <NavItem
-              to="/charging-stations"
-              active={location.pathname === "/charging-stations"}
-              icon={<Zap className="mr-2 h-5 w-5" />}
-              label="Bornes de Recharge"
-            />
-            <NavItem
-              to="/electric-charge/add"
-              active={location.pathname === "/electric-charge/add"}
-              icon={<PlusCircle className="mr-2 h-5 w-5" />}
-              label="Nouvelle Recharge"
-              indent
+              label="Stations"
             />
             <NavItem
               to="/statistics"
-              active={location.pathname === "/statistics"}
+              active={location.pathname === "/statistics" || location.pathname === "/electric-statistics"}
               icon={<BarChart3 className="mr-2 h-5 w-5" />}
               label="Statistiques"
-            />
-            <NavItem
-              to="/electric-statistics"
-              active={location.pathname === "/electric-statistics"}
-              icon={<Zap className="mr-2 h-5 w-5" />}
-              label="Stat. Électrique"
-              indent
             />
             <NavItem
               to="/cost-calculator"
               active={location.pathname === "/cost-calculator"}
               icon={<Calculator className="mr-2 h-5 w-5" />}
-              label="Calculateur Coût"
+              label="Calculateur"
             />
           </div>
         </ScrollArea>
@@ -122,76 +88,37 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
               />
               <NavItem
                 to="/purchases"
-                active={location.pathname.includes("/purchases") && !location.pathname.includes("/add")}
+                active={location.pathname.includes("/purchases")}
                 icon={<Fuel className="mr-2 h-5 w-5" />}
-                label="Achats Carburant"
+                label="Achats"
                 onClick={() => setOpen(false)}
-              />
-              <NavItem
-                to="/purchases/add"
-                active={location.pathname === "/purchases/add"}
-                icon={<PlusCircle className="mr-2 h-5 w-5" />}
-                label="Nouvel Achat"
-                onClick={() => setOpen(false)}
-                indent
               />
               <NavItem
                 to="/vehicles"
-                active={location.pathname.includes("/vehicles") && !location.pathname.includes("/add")}
+                active={location.pathname.includes("/vehicles")}
                 icon={<Car className="mr-2 h-5 w-5" />}
                 label="Véhicules"
                 onClick={() => setOpen(false)}
               />
               <NavItem
-                to="/vehicles/add"
-                active={location.pathname === "/vehicles/add"}
-                icon={<PlusCircle className="mr-2 h-5 w-5" />}
-                label="Nouveau Véhicule"
-                onClick={() => setOpen(false)}
-                indent
-              />
-              <NavItem
                 to="/stations"
-                active={location.pathname === "/stations"}
+                active={location.pathname === "/stations" || location.pathname === "/charging-stations"}
                 icon={<MapPin className="mr-2 h-5 w-5" />}
-                label="Stations-service"
+                label="Stations"
                 onClick={() => setOpen(false)}
-              />
-              <NavItem
-                to="/charging-stations"
-                active={location.pathname === "/charging-stations"}
-                icon={<Zap className="mr-2 h-5 w-5" />}
-                label="Bornes de Recharge"
-                onClick={() => setOpen(false)}
-              />
-              <NavItem
-                to="/electric-charge/add"
-                active={location.pathname === "/electric-charge/add"}
-                icon={<PlusCircle className="mr-2 h-5 w-5" />}
-                label="Nouvelle Recharge"
-                onClick={() => setOpen(false)}
-                indent
               />
               <NavItem
                 to="/statistics"
-                active={location.pathname === "/statistics"}
+                active={location.pathname === "/statistics" || location.pathname === "/electric-statistics"}
                 icon={<BarChart3 className="mr-2 h-5 w-5" />}
                 label="Statistiques"
                 onClick={() => setOpen(false)}
               />
               <NavItem
-                to="/electric-statistics"
-                active={location.pathname === "/electric-statistics"}
-                icon={<Zap className="mr-2 h-5 w-5" />}
-                label="Stat. Électrique"
-                onClick={() => setOpen(false)}
-                indent
-              />
-              <NavItem
                 to="/cost-calculator"
                 active={location.pathname === "/cost-calculator"}
                 icon={<Calculator className="mr-2 h-5 w-5" />}
-                label="Calculateur Coût"
+                label="Calculateur"
                 onClick={() => setOpen(false)}
               />
             </div>
