@@ -66,14 +66,14 @@ const AddElectricCharge = () => {
     }
   };
 
-  // Calculate consumption based on odometer difference and energy
+  // Calculate consumption based on odometer difference and distance
   const calculateConsumption = () => {
     const before = parseFloat(odometerBefore);
     const after = parseFloat(odometerAfter);
     const energy = parseFloat(energyAmount);
     
     if (!isNaN(before) && !isNaN(after) && !isNaN(energy) && after > before && energy > 0) {
-      const distance = after - before;
+      const distance = after - before; // distance in km
       return (energy / distance * 100).toFixed(2); // kWh/100km
     }
     return null;
@@ -383,22 +383,22 @@ const AddElectricCharge = () => {
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="odometerBefore">Compteur avant charge (kWh)</Label>
+                  <Label htmlFor="odometerBefore">Compteur avant charge (km)</Label>
                   <Input
                     id="odometerBefore"
                     type="number"
-                    placeholder="Ex: 125.5"
+                    placeholder="Ex: 15000"
                     value={odometerBefore}
                     onChange={(e) => setOdometerBefore(e.target.value)}
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="odometerAfter">Compteur après charge (kWh)</Label>
+                  <Label htmlFor="odometerAfter">Compteur après charge (km)</Label>
                   <Input
                     id="odometerAfter"
                     type="number"
-                    placeholder="Ex: 175.5"
+                    placeholder="Ex: 15200"
                     value={odometerAfter}
                     onChange={(e) => setOdometerAfter(e.target.value)}
                   />
@@ -414,7 +414,7 @@ const AddElectricCharge = () => {
                     </span>
                   </div>
                   <p className="text-xs text-blue-700 mt-1">
-                    Énergie consommée: {(parseFloat(odometerAfter) - parseFloat(odometerBefore)).toFixed(2)} kWh
+                    Distance parcourue: {(parseFloat(odometerAfter) - parseFloat(odometerBefore)).toFixed(2)} km
                   </p>
                 </div>
               )}
