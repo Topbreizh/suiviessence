@@ -110,6 +110,17 @@ const EditElectricCharge = () => {
     }
   };
 
+  // Calculate energy consumption based on odometer difference
+  const calculateEnergyConsumption = () => {
+    const before = parseFloat(odometerBefore);
+    const after = parseFloat(odometerAfter);
+    
+    if (!isNaN(before) && !isNaN(after) && after > before) {
+      return (after - before).toFixed(2);
+    }
+    return null;
+  };
+
   // Calculate consumption based on odometer difference and distance
   const calculateConsumption = () => {
     const before = parseFloat(odometerBefore);
@@ -423,27 +434,40 @@ const EditElectricCharge = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="odometerBefore">Compteur avant charge (km)</Label>
+                  <Label htmlFor="odometerBefore">Compteur avant charge (kWh)</Label>
                   <Input
                     id="odometerBefore"
                     type="number"
-                    placeholder="Ex: 15000"
+                    step="0.01"
+                    placeholder="Ex: 125.5"
                     value={odometerBefore}
                     onChange={(e) => setOdometerBefore(e.target.value)}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="odometerAfter">Compteur après charge (km)</Label>
+                  <Label htmlFor="odometerAfter">Compteur après charge (kWh)</Label>
                   <Input
                     id="odometerAfter"
                     type="number"
-                    placeholder="Ex: 15200"
+                    step="0.01"
+                    placeholder="Ex: 175.5"
                     value={odometerAfter}
                     onChange={(e) => setOdometerAfter(e.target.value)}
                   />
                 </div>
               </div>
+
+              {calculateEnergyConsumption() && (
+                <div className="rounded-md bg-green-50 border border-green-200 p-4">
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-4 w-4 text-green-600" />
+                    <span className="text-sm font-medium text-green-900">
+                      Énergie consommée: {calculateEnergyConsumption()} kWh
+                    </span>
+                  </div>
+                </div>
+              )}
 
               {calculateConsumption() && (
                 <div className="rounded-md bg-blue-50 border border-blue-200 p-4">
