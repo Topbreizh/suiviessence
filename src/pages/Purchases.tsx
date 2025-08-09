@@ -129,7 +129,7 @@ const Purchases = () => {
     }
 
     // Prepare CSV data
-    const headers = ['Date', 'Type', 'Véhicule', 'Station', 'Quantité/Énergie', 'Prix unitaire', 'Total (€)', 'Détails'];
+    const headers = ['Date', 'Type', 'Véhicule', 'Station', 'Quantité', 'Unité', 'Prix unitaire', 'Unité prix', 'Total', 'Devise', 'Détails'];
     
     const rows = sortedPurchases.map(purchase => {
       if (purchase.type === 'fuel') {
@@ -138,23 +138,30 @@ const Purchases = () => {
           'Carburant',
           getVehicleName(purchase.vehicleId),
           purchase.stationDisplayName,
-          `${purchase.quantity} L`,
-          `${purchase.pricePerLiter} €/L`,
-          purchase.totalPrice.toString(),
-          `${purchase.mileage} km`
+          purchase.quantity.toFixed(2),
+          'L',
+          purchase.pricePerLiter.toFixed(3),
+          'par L',
+          purchase.totalPrice.toFixed(2),
+          '€',
+          purchase.mileage ? `${purchase.mileage} km` : ''
         ];
-        } else {
-          return [
-            format(new Date(purchase.date), 'dd/MM/yyyy'),
-            'Électrique',
-            getVehicleName(purchase.vehicleId),
-            purchase.stationDisplayName,
-            `${purchase.energyAmount} kWh`,
-            `${purchase.pricePerKwh} €/kWh`,
-            purchase.totalPrice.toString(),
-            `${purchase.batteryLevelStart || 0}% → ${purchase.batteryLevelEnd || 0}%`
-          ];
-        }
+      } else {
+        return [
+          format(new Date(purchase.date), 'dd/MM/yyyy'),
+          'Électrique',
+          getVehicleName(purchase.vehicleId),
+          purchase.stationDisplayName,
+          purchase.energyAmount.toFixed(2),
+          'kWh',
+          purchase.pricePerKwh.toFixed(3),
+          'par kWh',
+          purchase.totalPrice.toFixed(2),
+          '€',
+          `${purchase.batteryLevelStart ?? ''}${purchase.batteryLevelStart !== undefined ? '%' : ''}` +
+          `${purchase.batteryLevelEnd !== undefined ? ` → ${purchase.batteryLevelEnd}%` : ''}`
+        ];
+      }
     });
     
     // Build CSV content
