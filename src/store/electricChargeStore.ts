@@ -75,8 +75,9 @@ export const createElectricChargeSlice = (set: any, get: any) => ({
       if (chargeData.batteryLevelStart === undefined) delete chargeData.batteryLevelStart;
       if (chargeData.batteryLevelEnd === undefined) delete chargeData.batteryLevelEnd;
       if (chargeData.odometerBefore === undefined) delete chargeData.odometerBefore;
-      if (chargeData.odometerAfter === undefined) delete chargeData.odometerAfter;
-      if (chargeData.notes === undefined || chargeData.notes === '') delete chargeData.notes;
+       if (chargeData.odometerAfter === undefined) delete chargeData.odometerAfter;
+       if (chargeData.mileage === undefined) delete chargeData.mileage;
+       if (chargeData.notes === undefined || chargeData.notes === '') delete chargeData.notes;
       const docRef = await addDoc(collection(db, "electricCharges"), chargeData);
       
       // Update local state with the new charge

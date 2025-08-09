@@ -123,14 +123,6 @@ const AddElectricCharge = () => {
       return;
     }
     
-    if (isNaN(mileageValue) || mileageValue <= 0) {
-      toast({
-        title: "Kilométrage invalide",
-        description: "Veuillez entrer un kilométrage valide",
-        variant: "destructive",
-      });
-      return;
-    }
     
     if (!stationName.trim()) {
       toast({
@@ -167,7 +159,7 @@ const AddElectricCharge = () => {
           lng: 0,
           address: '',
         },
-        mileage: mileageValue,
+        ...(mileage && !isNaN(mileageValue) ? { mileage: mileageValue } : {}),
         paymentMethod,
         odometerBefore: odometerBefore ? parseFloat(odometerBefore) : undefined,
         odometerAfter: odometerAfter ? parseFloat(odometerAfter) : undefined,

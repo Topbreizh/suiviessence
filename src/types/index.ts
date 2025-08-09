@@ -108,7 +108,7 @@ export interface ElectricCharge {
   };
   vehicleId: string;
   paymentMethod: PaymentMethod;
-  mileage: number; // in km
+  mileage?: number; // in km
   odometerBefore?: number; // compteur avant charge en km
   odometerAfter?: number; // compteur après charge en km
   chargingPower?: number; // in kW

@@ -70,7 +70,7 @@ const EditElectricCharge = () => {
         setEnergyAmount(charge.energyAmount.toString());
         setPricePerKwh(charge.pricePerKwh.toString());
         setTotalPrice(charge.totalPrice.toString());
-        setMileage(charge.mileage.toString());
+        setMileage(charge.mileage?.toString() || '');
         setOdometerBefore(charge.odometerBefore?.toString() || '');
         setOdometerAfter(charge.odometerAfter?.toString() || '');
         setPaymentMethod(charge.paymentMethod);
@@ -166,14 +166,6 @@ const EditElectricCharge = () => {
       return;
     }
     
-    if (isNaN(mileageValue) || mileageValue <= 0) {
-      toast({
-        title: "Kilométrage invalide",
-        description: "Veuillez entrer un kilométrage valide",
-        variant: "destructive",
-      });
-      return;
-    }
     
     if (!stationName.trim()) {
       toast({
@@ -194,7 +186,7 @@ const EditElectricCharge = () => {
         energyAmount: energyValue,
         pricePerKwh: priceValue,
         totalPrice: totalValue,
-        mileage: mileageValue,
+        ...(mileage && !isNaN(mileageValue) ? { mileage: mileageValue } : {}),
         paymentMethod,
         ...(odometerBefore && { odometerBefore: parseFloat(odometerBefore) }),
         ...(odometerAfter && { odometerAfter: parseFloat(odometerAfter) }),
