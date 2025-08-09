@@ -41,8 +41,6 @@ const EditElectricCharge = () => {
   const [energyAmount, setEnergyAmount] = useState('');
   const [pricePerKwh, setPricePerKwh] = useState('');
   const [totalPrice, setTotalPrice] = useState('');
-  const [batteryLevelStart, setBatteryLevelStart] = useState('');
-  const [batteryLevelEnd, setBatteryLevelEnd] = useState('');
   const [mileage, setMileage] = useState('');
   const [odometerBefore, setOdometerBefore] = useState('');
   const [odometerAfter, setOdometerAfter] = useState('');
@@ -76,8 +74,6 @@ const EditElectricCharge = () => {
         setOdometerBefore(charge.odometerBefore?.toString() || '');
         setOdometerAfter(charge.odometerAfter?.toString() || '');
         setPaymentMethod(charge.paymentMethod);
-        setBatteryLevelStart(charge.batteryLevelStart?.toString() || '');
-        setBatteryLevelEnd(charge.batteryLevelEnd?.toString() || '');
         setNotes(charge.notes || '');
       } else {
         toast({
@@ -202,8 +198,6 @@ const EditElectricCharge = () => {
         paymentMethod,
         ...(odometerBefore && { odometerBefore: parseFloat(odometerBefore) }),
         ...(odometerAfter && { odometerAfter: parseFloat(odometerAfter) }),
-        ...(batteryLevelStart && { batteryLevelStart: parseInt(batteryLevelStart) }),
-        ...(batteryLevelEnd && { batteryLevelEnd: parseInt(batteryLevelEnd) }),
         ...(notes && { notes: notes.trim() }),
       };
 
@@ -404,33 +398,6 @@ const EditElectricCharge = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="batteryStart">Batterie début (%)</Label>
-                  <Input
-                    id="batteryStart"
-                    type="number"
-                    min="0"
-                    max="100"
-                    placeholder="% au début"
-                    value={batteryLevelStart}
-                    onChange={(e) => setBatteryLevelStart(e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="batteryEnd">Batterie fin (%)</Label>
-                  <Input
-                    id="batteryEnd"
-                    type="number"
-                    min="0"
-                    max="100"
-                    placeholder="% à la fin"
-                    value={batteryLevelEnd}
-                    onChange={(e) => setBatteryLevelEnd(e.target.value)}
-                  />
-                </div>
-              </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
