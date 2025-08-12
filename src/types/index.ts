@@ -97,7 +97,7 @@ export interface ChargingStation {
 export interface ElectricCharge {
   id: string;
   date: Date;
-  energyAmount: number; // in kWh
+  energyAmount?: number; // in kWh
   pricePerKwh: number;
   totalPrice: number;
   stationName: string;

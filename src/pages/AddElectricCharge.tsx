@@ -105,14 +105,7 @@ const AddElectricCharge = () => {
     const totalValue = parseFloat(totalPrice);
     const mileageValue = parseFloat(mileage);
     
-    if (isNaN(energyValue) || energyValue <= 0) {
-      toast({
-        title: "Énergie invalide",
-        description: "Veuillez entrer une quantité d'énergie valide",
-        variant: "destructive",
-      });
-      return;
-    }
+    // Énergie optionnelle: pas de validation obligatoire
     
     if (isNaN(priceValue) || priceValue < 0) {
       toast({
@@ -150,7 +143,7 @@ const AddElectricCharge = () => {
       await addElectricCharge({
         date,
         vehicleId,
-        energyAmount: energyValue,
+        ...(energyAmount && !isNaN(energyValue) ? { energyAmount: energyValue } : {}),
         pricePerKwh: priceValue,
         totalPrice: totalValue,
         stationName: stationName.trim(),
@@ -296,7 +289,7 @@ const AddElectricCharge = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="energy">Énergie (kWh)</Label>
+                <Label htmlFor="energy">Énergie (kWh) — optionnel</Label>
                 <Input
                   id="energy"
                   type="number"

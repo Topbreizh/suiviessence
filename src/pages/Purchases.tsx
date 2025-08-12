@@ -152,11 +152,11 @@ const Purchases = () => {
           'Électrique',
           getVehicleName(purchase.vehicleId),
           purchase.stationDisplayName,
-          purchase.energyAmount.toFixed(2),
+          purchase.energyAmount != null ? purchase.energyAmount.toFixed(2) : '',
           'kWh',
-          purchase.pricePerKwh.toFixed(3),
+          purchase.pricePerKwh != null ? purchase.pricePerKwh.toFixed(3) : '',
           'par kWh',
-          purchase.totalPrice.toFixed(2),
+          purchase.totalPrice != null ? purchase.totalPrice.toFixed(2) : '',
           '€',
           `${purchase.batteryLevelStart ?? ''}${purchase.batteryLevelStart !== undefined ? '%' : ''}` +
           `${purchase.batteryLevelEnd !== undefined ? ` → ${purchase.batteryLevelEnd}%` : ''}`
@@ -270,16 +270,16 @@ const Purchases = () => {
                       <TableCell className="text-right">
                         {purchase.type === 'fuel' 
                           ? `${purchase.quantity.toFixed(2)} L`
-                          : `${purchase.energyAmount.toFixed(2)} kWh`
+                          : purchase.energyAmount != null ? `${purchase.energyAmount.toFixed(2)} kWh` : '—'
                         }
                       </TableCell>
                       <TableCell className="text-right">
                         {purchase.type === 'fuel' 
                           ? `${purchase.pricePerLiter.toFixed(3)} €/L`
-                          : `${purchase.pricePerKwh.toFixed(3)} €/kWh`
+                          : purchase.pricePerKwh != null ? `${purchase.pricePerKwh.toFixed(3)} €/kWh` : '—'
                         }
                       </TableCell>
-                      <TableCell className="font-medium text-right">{purchase.totalPrice.toFixed(2)} €</TableCell>
+                      <TableCell className="font-medium text-right">{purchase.totalPrice != null ? purchase.totalPrice.toFixed(2) : '—'} €</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>

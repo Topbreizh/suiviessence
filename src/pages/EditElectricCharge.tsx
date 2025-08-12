@@ -67,7 +67,7 @@ const EditElectricCharge = () => {
         setDate(new Date(charge.date));
         setVehicleId(charge.vehicleId);
         setStationName(charge.stationName);
-        setEnergyAmount(charge.energyAmount.toString());
+        setEnergyAmount(charge.energyAmount?.toString() || '');
         setPricePerKwh(charge.pricePerKwh.toString());
         setTotalPrice(charge.totalPrice.toString());
         setMileage(charge.mileage?.toString() || '');
@@ -148,14 +148,7 @@ const EditElectricCharge = () => {
     const totalValue = parseFloat(totalPrice);
     const mileageValue = parseFloat(mileage);
     
-    if (isNaN(energyValue) || energyValue <= 0) {
-      toast({
-        title: "Énergie invalide",
-        description: "Veuillez entrer une quantité d'énergie valide",
-        variant: "destructive",
-      });
-      return;
-    }
+    // Énergie optionnelle: pas de validation obligatoire
     
     if (isNaN(priceValue) || priceValue < 0) {
       toast({
@@ -183,7 +176,7 @@ const EditElectricCharge = () => {
         date,
         vehicleId,
         stationName: stationName.trim(),
-        energyAmount: energyValue,
+        ...(energyAmount && !isNaN(energyValue) ? { energyAmount: energyValue } : {}),
         pricePerKwh: priceValue,
         totalPrice: totalValue,
         ...(mileage && !isNaN(mileageValue) ? { mileage: mileageValue } : {}),
@@ -335,7 +328,7 @@ const EditElectricCharge = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="energy">Énergie (kWh)</Label>
+                <Label htmlFor="energy">Énergie (kWh) — optionnel</Label>
                 <Input
                   id="energy"
                   type="number"
