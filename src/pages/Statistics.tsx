@@ -118,7 +118,9 @@ const Statistics = () => {
     selectedVehicles.length === 0
       ? electricCharges
       : electricCharges.filter(c => selectedVehicles.includes(c.vehicleId))
-  );
+  ).filter(charge => {
+    return selectedStation === 'all' || charge.stationName === selectedStation;
+  });
 
   // Get vehicle name by id
   const getVehicleName = (id: string) => {
@@ -193,9 +195,12 @@ const Statistics = () => {
     })
     .filter(v => v.value > 0);
 
-  // Get all unique station names and fuel types
+  // Get all unique station names (fuel + electric) and fuel types
   const stationNames = Array.from(
-    new Set(fuelPurchases.map(p => p.stationName))
+    new Set([
+      ...fuelPurchases.map(p => p.stationName),
+      ...electricCharges.map(c => c.stationName)
+    ])
   ).filter(Boolean).sort();
 
   const fuelTypes = Array.from(
@@ -293,7 +298,7 @@ const Statistics = () => {
     })
     .filter(v => v.value > 0);
 
-  // Calculate station statistics
+  // Calculate station statistics (including electric stations)
   const stationData: Record<string, { name: string, count: number, total: number }> = {};
   
   filteredPurchases.forEach(purchase => {
@@ -309,6 +314,22 @@ const Statistics = () => {
     
     stationData[stationName].count += 1;
     stationData[stationName].total += purchase.totalPrice;
+  });
+
+  // Add electric charges to station statistics
+  filteredElectricCharges.forEach(charge => {
+    const stationName = charge.stationName;
+    
+    if (!stationData[stationName]) {
+      stationData[stationName] = {
+        name: stationName,
+        count: 0,
+        total: 0
+      };
+    }
+    
+    stationData[stationName].count += 1;
+    stationData[stationName].total += charge.totalPrice;
   });
   
   // Convert to array and sort by visit count
@@ -401,6 +422,20 @@ const Statistics = () => {
               {availableMonths.map((month) => (
                 <SelectItem key={month.value} value={month.value}>
                   {month.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={selectedStation} onValueChange={setSelectedStation}>
+            <SelectTrigger className="w-full md:w-[180px]">
+              <SelectValue placeholder="Station" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Toutes les stations</SelectItem>
+              {stationNames.map((station) => (
+                <SelectItem key={station} value={station}>
+                  {station}
                 </SelectItem>
               ))}
             </SelectContent>
